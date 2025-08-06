@@ -44,24 +44,17 @@ st.markdown("""
         background-color: var(--bg-color);
     }
 
-    /* 사이드바 스타일링 */
     .css-1d391kg {
         background-color: var(--sidebar-bg);
         border-right: 1px solid var(--border-color);
     }
 
-    .sidebar .element-container {
-        margin-bottom: 0.5rem;
-    }
-
-    /* 메인 컨텐츠 영역 */
     .main .block-container {
         padding-top: 2rem;
         padding-bottom: 2rem;
         max-width: 1200px;
     }
 
-    /* 카드 스타일 */
     .metric-card {
         background-color: var(--card-bg);
         border-radius: 20px;
@@ -112,7 +105,6 @@ st.markdown("""
         margin-bottom: 16px;
     }
 
-    /* 버튼 스타일 */
     .stButton > button {
         background-color: var(--primary-blue);
         color: white;
@@ -138,7 +130,6 @@ st.markdown("""
         background-color: var(--negative-color) !important;
     }
 
-    /* 입력 필드 스타일 */
     .stSelectbox > div > div {
         background-color: var(--card-bg);
         border: 1px solid var(--border-color);
@@ -162,14 +153,12 @@ st.markdown("""
         font-size: 15px;
     }
 
-    /* 테이블 스타일 */
     .stDataFrame {
         border-radius: 12px;
         overflow: hidden;
         border: 1px solid var(--border-color);
     }
 
-    /* 헤더 스타일 */
     .main-header {
         font-size: 28px;
         font-weight: 800;
@@ -183,7 +172,6 @@ st.markdown("""
         margin-bottom: 32px;
     }
 
-    /* AI 코칭 카드 */
     .ai-coaching-card {
         background: linear-gradient(135deg, #EBF4FF 0%, #E0F2FE 100%);
         border: 1px solid #BFDBFE;
@@ -205,7 +193,6 @@ st.markdown("""
         line-height: 1.6;
     }
 
-    /* 거래 히스토리 아이템 */
     .trade-item {
         display: flex;
         justify-content: space-between;
@@ -248,7 +235,6 @@ st.markdown("""
         color: var(--negative-color);
     }
 
-    /* 라이브 차트 표시기 */
     .live-indicator {
         display: inline-flex;
         align-items: center;
@@ -272,7 +258,6 @@ st.markdown("""
         100% { opacity: 1; }
     }
 
-    /* 감정 태그 스타일 */
     .emotion-tag {
         display: inline-block;
         padding: 4px 12px;
@@ -297,7 +282,6 @@ st.markdown("""
         color: #16A34A;
     }
 
-    /* 투자 헌장 스타일 */
     .charter-rule {
         background-color: #F8FAFC;
         border-left: 4px solid var(--primary-blue);
@@ -316,6 +300,38 @@ st.markdown("""
         font-size: 14px;
         color: var(--text-secondary);
         line-height: 1.5;
+    }
+
+    .price-update {
+        animation: price-pulse 1s ease-in-out;
+    }
+
+    @keyframes price-pulse {
+        0% { background-color: rgba(49, 130, 246, 0.1); }
+        50% { background-color: rgba(49, 130, 246, 0.3); }
+        100% { background-color: rgba(49, 130, 246, 0.1); }
+    }
+
+    .loss-alert {
+        background: linear-gradient(135deg, #FEF2F2 0%, #FECACA 100%);
+        border: 2px solid #F87171;
+        border-radius: 16px;
+        padding: 20px;
+        margin: 20px 0;
+        text-align: center;
+    }
+
+    .loss-alert-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #DC2626;
+        margin-bottom: 12px;
+    }
+
+    .loss-alert-content {
+        font-size: 14px;
+        color: #7F1D1D;
+        margin-bottom: 16px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -369,11 +385,10 @@ class ReMinDKoreanEngine:
             return {
                 'pattern': dominant_pattern,
                 'confidence': confidence,
-                'keywords': found_keywords[:3],  # 최대 3개까지
+                'keywords': found_keywords[:3],
                 'description': descriptions.get(dominant_pattern, '알 수 없는 패턴')
             }
         
-        # 기본값 반환
         return {
             'pattern': '합리적투자',
             'confidence': 0.60,
@@ -444,7 +459,6 @@ class ReMinDKoreanEngine:
 
 def load_user_data(user_type):
     """사용자 유형에 따른 데이터 로드"""
-    # 샘플 데이터 생성 (실제 파일 대신)
     return generate_sample_data(user_type)
 
 def generate_sample_data(user_type):
@@ -570,6 +584,32 @@ def initialize_session_state():
             'time': [datetime.now() - timedelta(minutes=i*2) for i in range(30, 0, -1)],
             'value': [base_value + np.random.normal(0, 100000) for _ in range(30)]
         }
+    # 새로 추가된 세션 상태
+    if 'last_price_update' not in st.session_state:
+        st.session_state.last_price_update = datetime.now()
+    if 'show_loss_modal' not in st.session_state:
+        st.session_state.show_loss_modal = False
+    if 'loss_info' not in st.session_state:
+        st.session_state.loss_info = {}
+    if 'show_charge_modal' not in st.session_state:
+        st.session_state.show_charge_modal = False
+    if 'show_loss_analysis' not in st.session_state:
+        st.session_state.show_loss_analysis = False
+    if 'user_loss_notes' not in st.session_state:
+        st.session_state.user_loss_notes = []
+
+def update_prices():
+    """실시간 가격 업데이트 (1초마다)"""
+    current_time = datetime.now()
+    if (current_time - st.session_state.last_price_update).seconds >= 1:
+        for stock_name in st.session_state.market_data:
+            # ±2% 범위 내에서 랜덤 변동
+            change = np.random.normal(0, 0.02)
+            new_price = max(1000, int(st.session_state.market_data[stock_name]['price'] * (1 + change)))
+            st.session_state.market_data[stock_name]['price'] = new_price
+            st.session_state.market_data[stock_name]['change'] = np.random.normal(0, 3)
+        
+        st.session_state.last_price_update = current_time
 
 def create_live_chart():
     """실시간 차트 생성"""
@@ -625,6 +665,173 @@ def create_live_chart():
     
     return fig
 
+def show_charge_modal():
+    """자산 충전 모달"""
+    st.markdown("### 💰 자산 충전")
+    st.write("원하는 금액을 입력하여 가상 자산을 충전할 수 있습니다.")
+    
+    charge_amount = st.number_input(
+        "충전할 금액 (원)",
+        min_value=10000,
+        max_value=100000000,
+        value=1000000,
+        step=100000,
+        format="%d"
+    )
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if st.button("💳 충전하기", key="confirm_charge", use_container_width=True):
+            st.session_state.cash += charge_amount
+            st.success(f"✅ ₩{charge_amount:,}원이 충전되었습니다!")
+            st.balloons()
+            st.session_state.show_charge_modal = False
+            time.sleep(2)
+            st.rerun()
+    
+    with col2:
+        if st.button("❌ 취소", key="cancel_charge", use_container_width=True):
+            st.session_state.show_charge_modal = False
+            st.rerun()
+
+def show_loss_modal(loss_info):
+    """손실 발생 시 오답노트 작성 유도 모달"""
+    st.markdown(f'''
+    <div class="loss-alert">
+        <div class="loss-alert-title">📉 손실이 발생했습니다</div>
+        <div class="loss-alert-content">
+            <strong>{loss_info['stock_name']}</strong> {loss_info['quantity']}주 매도에서<br>
+            <strong>₩{loss_info['loss_amount']:,.0f}원 ({loss_info['loss_percentage']:.1f}%)</strong> 손실이 발생했습니다.<br><br>
+            매수가: <strong>₩{loss_info['buy_price']:,.0f}</strong> → 매도가: <strong>₩{loss_info['sell_price']:,.0f}</strong>
+        </div>
+    </div>
+    ''', unsafe_allow_html=True)
+    
+    st.markdown("### 🤔 오답노트를 작성할까요?")
+    st.write("손실 거래를 분석하여 향후 더 나은 투자 결정을 내릴 수 있도록 도와드립니다.")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if st.button("📝 네, 오답노트를 작성하겠습니다", key="create_loss_note", use_container_width=True):
+            st.session_state.show_loss_analysis = True
+            st.session_state.show_loss_modal = False
+            st.rerun()
+    
+    with col2:
+        if st.button("❌ 아니요, 다음에 하겠습니다", key="skip_loss_note", use_container_width=True):
+            st.info("💡 언제든지 AI 코칭 센터에서 과거 거래를 분석할 수 있습니다.")
+            st.session_state.show_loss_modal = False
+            st.session_state.loss_info = {}
+            time.sleep(1)
+            st.rerun()
+
+def show_loss_analysis(loss_info):
+    """손실 발생 시 상세 분석 탭"""
+    st.markdown(f'''
+    <div class="loss-alert">
+        <div class="loss-alert-title">📊 손실 거래 상세 분석</div>
+        <div class="loss-alert-content">
+            <strong>{loss_info['stock_name']}</strong> {loss_info['quantity']}주 매도 분석<br>
+            손실: <strong>₩{loss_info['loss_amount']:,.0f}원 ({loss_info['loss_percentage']:.1f}%)</strong>
+        </div>
+    </div>
+    ''', unsafe_allow_html=True)
+    
+    # 분석 탭
+    tab1, tab2, tab3, tab4 = st.tabs(["📈 기술 분석", "📰 뉴스", "😔 감정", "💬 Comment"])
+    
+    with tab1:
+        st.markdown("#### 📈 기술 분석")
+        st.markdown(f"""
+        **{loss_info['stock_name']} 기술적 분석 요약:**
+        - 매수가: ₩{loss_info['buy_price']:,.0f}
+        - 매도가: ₩{loss_info['sell_price']:,.0f}
+        - 손실률: {loss_info['loss_percentage']:.1f}%
+        
+        **분석 포인트:**
+        - 지지선 이탈로 인한 추가 하락 위험이 있었음
+        - 거래량 급증과 함께 매도 압력 증가
+        - RSI 지표상 과매도 구간 진입
+        """)
+    
+    with tab2:
+        st.markdown("#### 📰 뉴스 분석")
+        news_items = [
+            f"{loss_info['stock_name']} 실적 전망 하향 조정",
+            "업종 전반 투자심리 위축",
+            "외국인 투자자 매도세 지속",
+            "시장 변동성 확대 우려"
+        ]
+        
+        for i, news in enumerate(news_items, 1):
+            st.markdown(f"**{i}.** {news}")
+    
+    with tab3:
+        st.markdown("#### 😔 감정 분석")
+        emotions = ["불안", "공포", "후회", "조급함"]
+        selected_emotions = st.multiselect(
+            "당시 느꼈던 감정을 선택하세요:",
+            emotions,
+            default=["불안", "후회"]
+        )
+        
+        emotion_intensity = st.slider(
+            "감정의 강도 (1-10)",
+            min_value=1,
+            max_value=10,
+            value=7
+        )
+    
+    with tab4:
+        st.markdown("#### 💬 Comment")
+        user_comment = st.text_area(
+            "이번 거래에 대한 생각을 자유롭게 적어주세요:",
+            height=150,
+            placeholder="예: 너무 성급하게 손절했나 싶다. 뉴스만 보고 판단한 것 같아서 아쉽다...",
+            key="loss_comment"
+        )
+        
+        if st.button("📝 오답노트 완성하기", type="primary", use_container_width=True):
+            if user_comment.strip():
+                # AI 해시태그 생성
+                analysis = st.session_state.engine.analyze_emotion_text(user_comment, st.session_state.current_user)
+                
+                # 오답노트 저장
+                loss_note = {
+                    'timestamp': datetime.now(),
+                    'stock_name': loss_info['stock_name'],
+                    'loss_amount': loss_info['loss_amount'],
+                    'loss_percentage': loss_info['loss_percentage'],
+                    'buy_price': loss_info['buy_price'],
+                    'sell_price': loss_info['sell_price'],
+                    'quantity': loss_info['quantity'],
+                    'user_comment': user_comment,
+                    'ai_hashtags': [f"#{analysis['pattern']}", f"#{analysis['keywords'][0] if analysis['keywords'] else '감정거래'}"],
+                    'emotions': selected_emotions,
+                    'emotion_intensity': emotion_intensity
+                }
+                
+                st.session_state.user_loss_notes.append(loss_note)
+                
+                st.success("✅ 오답노트가 AI 코칭 센터에 추가되었습니다!")
+                st.balloons()
+                
+                st.session_state.show_loss_analysis = False
+                st.session_state.show_loss_modal = False
+                st.session_state.loss_info = {}
+                
+                time.sleep(2)
+                st.rerun()
+            else:
+                st.warning("코멘트를 입력해주세요.")
+    
+    # 뒤로가기 버튼
+    if st.button("⬅️ 뒤로가기", key="back_from_analysis"):
+        st.session_state.show_loss_analysis = False
+        st.session_state.show_loss_modal = True
+
 def execute_trade(stock_name, trade_type, quantity, price):
     """거래 실행 함수"""
     total_amount = quantity * price
@@ -658,12 +865,13 @@ def execute_trade(stock_name, trade_type, quantity, price):
             })
             st.session_state.history = pd.concat([st.session_state.history, new_trade], ignore_index=True)
             
-            return True, f"✅ {stock_name} {quantity}주를 {price:,}원에 매수했습니다."
+            return True, f"✅ {stock_name} {quantity}주를 {price:,}원에 매수했습니다.", None
         else:
-            return False, "❌ 현금이 부족합니다."
+            return False, "❌ 현금이 부족합니다.", None
     
     elif trade_type == "매도":
         if stock_name in st.session_state.portfolio and st.session_state.portfolio[stock_name]['shares'] >= quantity:
+            avg_buy_price = st.session_state.portfolio[stock_name]['avg_price']
             st.session_state.cash += total_amount
             st.session_state.portfolio[stock_name]['shares'] -= quantity
             
@@ -681,11 +889,25 @@ def execute_trade(stock_name, trade_type, quantity, price):
             })
             st.session_state.history = pd.concat([st.session_state.history, new_trade], ignore_index=True)
             
-            return True, f"✅ {stock_name} {quantity}주를 {price:,}원에 매도했습니다."
+            # 손실 체크 (매도가 < 평균 매수가)
+            if price < avg_buy_price:
+                loss_amount = (avg_buy_price - price) * quantity
+                loss_percentage = ((price - avg_buy_price) / avg_buy_price) * 100
+                
+                return True, f"✅ {stock_name} {quantity}주를 {price:,}원에 매도했습니다.", {
+                    'stock_name': stock_name,
+                    'loss_amount': loss_amount,
+                    'loss_percentage': loss_percentage,
+                    'buy_price': avg_buy_price,
+                    'sell_price': price,
+                    'quantity': quantity
+                }
+            
+            return True, f"✅ {stock_name} {quantity}주를 {price:,}원에 매도했습니다.", None
         else:
-            return False, "❌ 보유 수량이 부족합니다."
+            return False, "❌ 보유 수량이 부족합니다.", None
     
-    return False, "❌ 알 수 없는 오류가 발생했습니다."
+    return False, "❌ 알 수 없는 오류가 발생했습니다.", None
 
 def generate_ai_coaching_tip(user_data, user_type):
     """오늘의 AI 코칭 팁 생성"""
@@ -715,6 +937,7 @@ def generate_ai_coaching_tip(user_data, user_type):
 
 def main():
     initialize_session_state()
+    update_prices()  # 실시간 가격 업데이트
     
     # 사이드바 네비게이션
     with st.sidebar:
@@ -722,11 +945,11 @@ def main():
         st.markdown("AI 투자 심리 분석 플랫폼")
         st.markdown("---")
         
-        # 사용자 선택
+        # 사용자 선택 (키보드 입력 방지)
         user_type = st.selectbox(
             "사용자 선택",
             ["김국민 (공포매도형)", "박투자 (추격매수형)"],
-            key="user_selector"
+            key="user_selector_main"
         )
         
         # 사용자 타입 업데이트
@@ -741,14 +964,43 @@ def main():
         
         st.markdown("---")
         
-        # 페이지 선택
+        # 페이지 선택 (키보드 입력 방지)
         page = st.selectbox(
             "페이지 선택",
-            ["메인 대시보드", "종목 상세 및 거래", "AI 코칭 센터", "포트폴리오"]
+            ["메인 대시보드", "종목 상세 및 거래", "AI 코칭 센터", "포트폴리오"],
+            key="page_selector_main"
         )
+        
+        # 실시간 잔고 표시 (사이드바에 추가)
+        st.markdown("---")
+        st.markdown("### 💰 현재 잔고")
+        st.markdown(f"**현금:** ₩{st.session_state.cash:,}")
+        
+        total_stock_value = sum([
+            holdings['shares'] * st.session_state.market_data.get(stock, {'price': 50000})['price']
+            for stock, holdings in st.session_state.portfolio.items()
+        ])
+        st.markdown(f"**주식:** ₩{total_stock_value:,}")
+        st.markdown(f"**총자산:** ₩{st.session_state.cash + total_stock_value:,}")
+        
+        # 충전 버튼 추가
+        if st.button("💳 자산 충전", key="charge_button", use_container_width=True):
+            st.session_state.show_charge_modal = True
+            st.rerun()
+        
+        # 최근 거래 내역 (사이드바에 추가)
+        if not st.session_state.history.empty:
+            st.markdown("### 📊 최근 거래")
+            recent_trades = st.session_state.history.tail(5).iloc[::-1]  # 최근 5개, 역순
+            for _, trade in recent_trades.iterrows():
+                trade_color = "🔴" if trade['거래구분'] == "매수" else "🔵"
+                st.markdown(f"{trade_color} {trade['종목명']} {trade['수량']}주")
+                st.caption(f"{trade['거래일시'].strftime('%H:%M:%S')} | ₩{trade['가격']:,}")
     
     # 메인 컨텐츠
-    if page == "메인 대시보드":
+    if st.session_state.show_charge_modal:
+        show_charge_modal()
+    elif page == "메인 대시보드":
         show_main_dashboard()
     elif page == "종목 상세 및 거래":
         show_stock_trading()
@@ -822,10 +1074,6 @@ def show_main_dashboard():
         fig = create_live_chart()
         st.plotly_chart(fig, use_container_width=True)
     
-    # 자동 새로고침 (2초마다)
-    time.sleep(2)
-    st.rerun()
-    
     # 오늘의 AI 코칭 카드
     st.markdown("### 🤖 오늘의 AI 코칭")
     ai_tip = generate_ai_coaching_tip(st.session_state.user_data, st.session_state.current_user)
@@ -836,17 +1084,32 @@ def show_main_dashboard():
         <div class="ai-coaching-content">{ai_tip}</div>
     </div>
     ''', unsafe_allow_html=True)
+    
+    # 자동 새로고침 (2초마다, 모달이 열려있지 않을 때만)
+    if not st.session_state.show_charge_modal and not st.session_state.show_loss_modal and not st.session_state.show_loss_analysis:
+        time.sleep(2)
+        st.rerun()
 
 def show_stock_trading():
     """종목 상세 및 거래 페이지"""
     st.markdown('<h1 class="main-header">종목 상세 및 거래</h1>', unsafe_allow_html=True)
     st.markdown('<p class="sub-header">실시간 시세 확인 및 모의 거래를 진행하세요</p>', unsafe_allow_html=True)
     
-    # 종목 선택
+    # 손실 상세 분석 표시
+    if st.session_state.show_loss_analysis and st.session_state.loss_info:
+        show_loss_analysis(st.session_state.loss_info)
+        return
+    
+    # 손실 모달 표시
+    if st.session_state.show_loss_modal and st.session_state.loss_info:
+        show_loss_modal(st.session_state.loss_info)
+        return
+    
+    # 종목 선택 (키보드 입력 방지)
     selected_stock = st.selectbox(
         "거래할 종목을 선택하세요",
         list(st.session_state.market_data.keys()),
-        key="stock_selector"
+        key="stock_selector_main"
     )
     
     if selected_stock:
@@ -862,7 +1125,7 @@ def show_stock_trading():
             change_symbol = "+" if stock_data['change'] >= 0 else ""
             
             st.markdown(f'''
-            <div class="card">
+            <div class="card price-update">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                     <h2 style="margin: 0; color: var(--text-primary);">{selected_stock}</h2>
                     <div style="text-align: right;">
@@ -885,12 +1148,12 @@ def show_stock_trading():
             dates = pd.date_range(start='2024-01-01', end='2024-08-05', freq='D')
             base_price = stock_data['price']
             prices = []
-            current_price = base_price * 0.8  # 80%에서 시작
+            current_price_sim = base_price * 0.8  # 80%에서 시작
             
             for _ in dates:
                 change = np.random.normal(0, 0.02)  # 2% 표준편차
-                current_price *= (1 + change)
-                prices.append(current_price)
+                current_price_sim *= (1 + change)
+                prices.append(current_price_sim)
             
             # 마지막 가격을 현재 가격으로 조정
             prices[-1] = base_price
@@ -926,24 +1189,35 @@ def show_stock_trading():
             # 거래 인터페이스
             st.markdown("### 💰 거래 실행")
             
+            # 거래 구분을 form 밖으로 이동 (실시간 반응을 위해)
+            trade_type = st.selectbox("거래 구분", ["매수", "매도"], key="trade_type_selector")
+            
             with st.form("trading_form"):
-                trade_type = st.selectbox("거래 구분", ["매수", "매도"])
                 quantity = st.number_input("수량", min_value=1, value=10, step=1)
                 price = st.number_input("가격", min_value=1000, value=stock_data['price'], step=1000)
                 
                 total_amount = quantity * price
                 st.markdown(f"**총 거래금액: ₩ {total_amount:,}**")
                 
+                # 거래 타입에 따라 버튼 스타일 변경 (실시간)
                 if trade_type == "매수":
-                    submit_button = st.form_submit_button("🔴 매수 실행", use_container_width=True)
+                    submit_button = st.form_submit_button("🔴 매수 실행", use_container_width=True, type="primary")
                 else:
-                    submit_button = st.form_submit_button("🔵 매도 실행", use_container_width=True)
+                    submit_button = st.form_submit_button("🔵 매도 실행", use_container_width=True, type="secondary")
                 
                 if submit_button:
-                    success, message = execute_trade(selected_stock, trade_type, quantity, price)
+                    success, message, loss_info = execute_trade(selected_stock, trade_type, quantity, price)
                     if success:
                         st.success(message)
-                        st.rerun()
+                        
+                        # 손실 발생 시 오답노트 유도
+                        if loss_info:
+                            st.session_state.show_loss_modal = True
+                            st.session_state.loss_info = loss_info
+                            st.rerun()
+                        else:
+                            time.sleep(1)
+                            st.rerun()
                     else:
                         st.error(message)
             
@@ -971,6 +1245,11 @@ def show_stock_trading():
                 ''', unsafe_allow_html=True)
             else:
                 st.info("현재 보유하지 않은 종목입니다.")
+    
+    # 1초마다 자동 새로고침 (조건부)
+    if not st.session_state.show_loss_modal and not st.session_state.show_loss_analysis:
+        time.sleep(1)
+        st.rerun()
 
 def show_ai_coaching():
     """AI 코칭 센터 페이지"""
@@ -981,9 +1260,38 @@ def show_ai_coaching():
     
     with tab1:
         st.markdown("### 🔍 AI 오답노트 분석")
-        st.markdown("손실 거래를 선택하여 AI와 함께 분석해보세요")
         
-        # 손실 거래 필터링
+        # 사용자가 작성한 오답노트 표시
+        if st.session_state.user_loss_notes:
+            st.markdown("#### 📋 작성된 오답노트")
+            
+            for i, note in enumerate(reversed(st.session_state.user_loss_notes), 1):
+                with st.expander(f"오답노트 #{i}: {note['stock_name']} ({note['timestamp'].strftime('%Y-%m-%d %H:%M')})", expanded=False):
+                    col1, col2 = st.columns([1, 1])
+                    
+                    with col1:
+                        st.markdown(f"**📊 거래 정보**")
+                        st.markdown(f"- 종목: {note['stock_name']}")
+                        st.markdown(f"- 수량: {note['quantity']}주")
+                        st.markdown(f"- 매수가: ₩{note['buy_price']:,.0f}")
+                        st.markdown(f"- 매도가: ₩{note['sell_price']:,.0f}")
+                        st.markdown(f"- 손실: ₩{note['loss_amount']:,.0f} ({note['loss_percentage']:.1f}%)")
+                    
+                    with col2:
+                        st.markdown(f"**🤖 AI 분석**")
+                        st.markdown(f"- 해시태그: {' '.join(note['ai_hashtags'])}")
+                        st.markdown(f"- 감정 상태: {', '.join(note['emotions'])}")
+                        st.markdown(f"- 감정 강도: {note['emotion_intensity']}/10")
+                    
+                    st.markdown(f"**💬 사용자 코멘트**")
+                    st.markdown(f'"{note['user_comment']}"')
+                    
+                    st.markdown("---")
+        
+        st.markdown("#### 🔍 과거 손실 거래 분석")
+        st.markdown("과거 데이터에서 손실 거래를 선택하여 AI와 함께 분석해보세요")
+        
+        # 손실 거래 필터링 (기존 코드)
         user_data = st.session_state.user_data
         losing_trades = user_data[user_data['수익률'] < 0].copy()
         
