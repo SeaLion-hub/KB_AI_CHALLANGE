@@ -7,3 +7,4 @@ pathlib2>=2.3.0
 torch
 transformers
 scikit-learn
+sentence-transformers>=2.2.0

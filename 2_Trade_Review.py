@@ -12,7 +12,8 @@ sys.path.append(str(project_root))
 from db.user_db import UserDatabase
 from api.market_api import MarketAPI
 from utils.ui_components import apply_toss_css, create_metric_card
-from ml.investment_charter_logic import show_charter_compliance_check
+# 1. AI 분석을 위한 import 추가
+from ml.predictor import SentimentPredictor
 
 # 페이지 설정
 st.set_page_config(
@@ -30,6 +31,84 @@ if 'current_user' not in st.session_state or st.session_state.current_user is No
     if st.button("🏠 메인 페이지로 이동"):
         st.switch_page("main_app.py")
     st.stop()
+
+# 2. AI 모델 로드를 위한 캐시 함수 추가
+@st.cache_resource
+def get_predictor():
+    """SentimentPredictor를 캐시하여 한 번만 로드합니다."""
+    try:
+        return SentimentPredictor(model_path='./sentiment_model')
+    except Exception as e:
+        st.error(f"AI 분석 모델 로딩에 실패했습니다: {e}")
+        return None
+
+def show_charter_compliance_check(username: str, memo: str) -> dict:
+    """
+    투자 헌장 준수 체크 함수 (분리된 함수)
+    
+    Args:
+        username: 사용자명
+        memo: 거래 메모
+    
+    Returns:
+        dict: 준수 체크 결과
+    """
+    compliance_issues = []
+    warnings = []
+    recommendation = ""
+    
+    # 선택된 투자 원칙 확인
+    selected_principle = st.session_state.get('selected_principle')
+    
+    if not selected_principle:
+        return {
+            'compliance_issues': [],
+            'warnings': ["💡 투자 원칙을 설정하면 더 정확한 검증을 받을 수 있습니다."],
+            'recommendation': "투자 헌장 페이지에서 투자 원칙을 선택해보세요."
+        }
+    
+    memo_lower = memo.lower()
+    
+    # 공통 위험 패턴 체크
+    if any(word in memo_lower for word in ['급히', '서둘러', '패닉', '무서워서']):
+        compliance_issues.append("⚠️ 감정적 급한 판단으로 보입니다.")
+    
+    if any(word in memo_lower for word in ['추천받고', '유튜버', '친구가', '커뮤니티']):
+        warnings.append("🤔 타인의 추천에 의존한 투자는 위험할 수 있습니다.")
+    
+    if any(word in memo_lower for word in ['확실', '100%', '대박', '올인']):
+        compliance_issues.append("🚨 과도한 확신이나 올인 투자는 위험합니다.")
+    
+    # 원칙별 특별 체크
+    if selected_principle == "워런 버핏":
+        if not any(word in memo_lower for word in ['분석', '펀더멘털', '기업', '가치']):
+            warnings.append("🎯 워런 버핏의 원칙: 철저한 기업 분석을 했나요?")
+        
+        if any(word in memo_lower for word in ['단기', '빨리']):
+            compliance_issues.append("⏰ 워런 버핏 원칙 위배: 장기 투자 관점을 유지하세요.")
+        
+        recommendation = "기업의 내재가치를 분석하고 장기적 관점에서 투자하세요."
+    
+    elif selected_principle == "피터 린치":
+        if not any(word in memo_lower for word in ['성장', '실적', '매출', '실생활']):
+            warnings.append("🔍 피터 린치의 원칙: 성장 스토리를 파악했나요?")
+        
+        recommendation = "일상에서 경험한 기업의 성장 가능성을 분석해보세요."
+    
+    elif selected_principle == "벤저민 그레이엄":
+        if not any(word in memo_lower for word in ['밸류에이션', '저평가', '안전마진', '재무제표']):
+            warnings.append("⚖️ 벤저민 그레이엄의 원칙: 안전 마진을 확보했나요?")
+        
+        recommendation = "내재가치 대비 충분한 할인가에서 매수했는지 확인하세요."
+    
+    if not compliance_issues and not warnings:
+        recommendation = "✅ 투자 원칙에 잘 부합하는 거래입니다!"
+    
+    return {
+        'compliance_issues': compliance_issues,
+        'warnings': warnings,
+        'recommendation': recommendation
+    }
 
 def show_user_switcher_sidebar():
     """사이드바에 사용자 전환 및 네비게이션 표시"""
@@ -376,13 +455,166 @@ def show_trade_review():
             key="info_sources"
         )
         
-        # 판단 근거 설명
-        decision_reasoning = st.text_area(
+        # 판단 근거 설명 (1. 세션 상태와 명시적으로 연결)
+        st.session_state.decision_reasoning = st.text_area(
             "거래 결정의 판단 근거를 구체적으로 설명해주세요",
             height=100,
             placeholder="예: 기술적으로 상승 추세가 확실해 보였고, 유튜버의 추천도 있었다...",
-            key="decision_reasoning"
+            value=st.session_state.get('decision_reasoning', ''),
+            key="decision_reasoning_input"
         )
+        
+        # 3. AI 분석 기능 추가
+        if st.button("🤖 AI로 투자 패턴 분석하기", key="analyze_pattern"):
+            predictor = get_predictor()
+            if predictor and st.session_state.get('decision_reasoning', '').strip():
+                # AI 분석 실행 및 결과 저장
+                with st.spinner("AI가 투자 패턴을 분석 중입니다..."):
+                    result = predictor.predict(st.session_state.decision_reasoning)
+                    st.session_state.analysis_result = result
+            elif not st.session_state.get('decision_reasoning', '').strip():
+                st.warning("분석할 내용을 먼저 입력해주세요.")
+            else:
+                # get_predictor()가 None을 반환한 경우 (모델 로드 실패)
+                st.error("AI 분석 기능을 사용할 수 없습니다. 모델 로드 상태를 확인하세요.")
+        
+        # 세션 상태에 분석 결과가 있으면 표시
+        if 'analysis_result' in st.session_state and st.session_state.analysis_result:
+            result = st.session_state.analysis_result
+            pattern = result.get('pattern', 'N/A')
+            confidence = result.get('confidence', 0)
+            description = result.get('description', '')
+            
+            st.markdown("---")
+            st.markdown("#### 🧠 AI 분석 결과")
+            st.info(f"**감지된 패턴:** '{pattern}' (신뢰도: {confidence:.1%})")
+            st.write(f"**패턴 설명:** {description}")
+            
+            # 추가적인 분석 결과 표시
+            if 'all_probabilities' in result:
+                st.markdown("**기타 가능한 패턴들:**")
+                for pat, prob in sorted(result['all_probabilities'].items(), 
+                                      key=lambda x: x[1], reverse=True)[:3]:
+                    if pat != pattern:
+                        st.write(f"- {pat}: {prob:.1%}")
+            
+            # 3. AI 추천 템플릿 섹션 추가
+            st.markdown("#### ✍️ AI 추천 템플릿")
+            st.markdown("감지된 패턴을 바탕으로 한 템플릿을 클릭하면 텍스트 영역에 추가됩니다.")
+            
+            # 4. 패턴별 템플릿 매핑 딕셔너리
+            pattern_templates = {
+                "추격매수": [
+                    "급등하는 것을 보고 더 오를 것 같아서 따라 들어갔습니다.",
+                    "이번 기회를 놓치면 후회할 것 같다는 생각에 매수했습니다.",
+                    "다른 사람들이 모두 매수한다고 해서 뒤늦게 합류했습니다."
+                ],
+                "공포": [
+                    "주가가 계속 하락해서 더 큰 손실을 보기 전에 매도했습니다.",
+                    "시장의 공포 분위기에 휩쓸려 일단 현금화했습니다.",
+                    "뉴스에서 악재가 나와서 무서워서 급하게 매도했습니다."
+                ],
+                "냉정": [
+                    "사전에 계획한 분석과 원칙에 따라 거래를 실행했습니다.",
+                    "기술적/기본적 지표가 설정한 기준에 도달하여 거래했습니다.",
+                    "감정적 요인을 배제하고 데이터를 바탕으로 판단했습니다."
+                ],
+                "욕심": [
+                    "이미 수익이 났지만 더 큰 수익을 위해 추가 매수했습니다.",
+                    "쉽게 돈을 벌 수 있을 것 같아서 물량을 늘렸습니다.",
+                    "100% 확실하다는 생각에 올인에 가깝게 투자했습니다."
+                ],
+                "과신": [
+                    "내 분석이 완벽하다고 생각해서 확신을 갖고 매수했습니다.",
+                    "과거 성공 경험을 바탕으로 이번에도 틀릴 리 없다고 생각했습니다.",
+                    "위험을 과소평가하고 큰 금액을 투자했습니다."
+                ],
+                "손실회피": [
+                    "손실을 확정하기 싫어서 계속 보유했습니다.",
+                    "평단 낮추기를 위해 추가 매수를 했습니다.",
+                    "손절하기 아까워서 더 기다려보기로 했습니다."
+                ],
+                "확증편향": [
+                    "내 생각을 뒷받침하는 정보만 찾아서 확신을 가졌습니다.",
+                    "반대 의견은 무시하고 호재만 믿고 투자했습니다.",
+                    "원하는 결론에 맞는 분석만 골라서 참고했습니다."
+                ],
+                "군중심리": [
+                    "모든 사람들이 사라고 해서 따라서 매수했습니다.",
+                    "커뮤니티 분위기를 타고 동참했습니다.",
+                    "유명한 사람의 추천을 그대로 따라했습니다."
+                ],
+                "패닉": [
+                    "급작스러운 하락에 당황해서 일단 매도했습니다.",
+                    "시장이 붕괴될 것 같은 공포에 모든 것을 정리했습니다.",
+                    "뉴스를 보고 패닉 상태에서 성급하게 결정했습니다."
+                ],
+                "불안": [
+                    "계속 보유하기 불안해서 일부만 매도했습니다.",
+                    "변동성이 너무 커서 비중을 줄였습니다.",
+                    "확실하지 않은 상황에서 안전하게 일부 정리했습니다."
+                ]
+            }
+            
+            # 5. 감지된 패턴에 해당하는 템플릿 가져오기
+            templates = pattern_templates.get(pattern, [])
+            
+            if templates:
+                # 6. 최대 3개의 템플릿을 버튼으로 표시
+                cols = st.columns(min(3, len(templates)))
+                
+                for i, template in enumerate(templates[:3]):
+                    with cols[i]:
+                        # 템플릿을 짧게 표시 (첫 20글자)
+                        short_template = template[:20] + "..." if len(template) > 20 else template
+                        
+                        # 7. 템플릿 버튼 클릭 시 텍스트 추가
+                        if st.button(short_template, key=f"template_{i}", use_container_width=True):
+                            current_text = st.session_state.get('decision_reasoning', '')
+                            
+                            # 기존 텍스트가 있으면 공백 추가 후 템플릿 추가
+                            if current_text.strip():
+                                new_text = current_text + " " + template
+                            else:
+                                new_text = template
+                            
+                            # 세션 상태 업데이트
+                            st.session_state.decision_reasoning = new_text
+                            st.success(f"템플릿이 추가되었습니다!")
+                            st.rerun()
+                        
+                        # 전체 템플릿 내용을 작은 글씨로 표시
+                        st.caption(template)
+            else:
+                st.info("이 패턴에 대한 템플릿이 준비되어 있지 않습니다.")
+            
+            # 2. AI 원칙 추천 버튼 추가
+            if st.button("💡 AI로부터 원칙 추천받기", key="suggest_principle"):
+                # 3a. 패턴별 원칙 매핑 딕셔너리
+                pattern_to_principle = {
+                    "추격매수": "급등하는 종목은 바로 매수하지 않고, 최소 1시간 이상 지켜본다.",
+                    "공포": "시장이 급락할 때는, 매도 전에 내가 설정한 손절 기준에 부합하는지 먼저 확인한다.",
+                    "과신": "높은 수익이 예상되더라도, 한 종목에 전체 자산의 20% 이상을 투자하지 않는다.",
+                    "손실회피": "매수 가격에 얽매이지 않고, -15% 등 명확한 손절 원칙을 기계적으로 지킨다.",
+                    "욕심": "단기 수익에 현혹되지 말고, 투자 전 목표 수익률과 기간을 명확히 설정한다.",
+                    "확증편향": "투자 결정 전, 반대 의견과 위험 요소를 의무적으로 3가지 이상 검토한다.",
+                    "군중심리": "타인의 추천에 의존하지 말고, 나만의 분석 기준과 체크리스트를 만든다.",
+                    "패닉": "감정이 격해질 때는 24시간 냉정 기간을 두고, 그 후에 재검토한다.",
+                    "불안": "불안할 때는 투자 금액을 절반으로 줄이고, 분할 매수/매도를 고려한다.",
+                    "냉정": "현재의 합리적 투자 접근법을 계속 유지하되, 정기적으로 전략을 점검한다."
+                }
+                
+                # 3b. 감지된 패턴 가져오기
+                detected_pattern = result.get('pattern', '')
+                
+                # 3c. 매핑에서 해당하는 원칙 찾기
+                suggested_principle = pattern_to_principle.get(detected_pattern, 
+                    "감지된 패턴을 바탕으로 개인만의 투자 원칙을 세워보세요.")
+                
+                # 3d. 세션 상태에 저장
+                st.session_state.suggested_rule = suggested_principle
+                
+                st.success(f"💡 '{detected_pattern}' 패턴에 기반한 투자 원칙이 아래 텍스트 상자에 자동으로 입력되었습니다!")
     
     with tab3:
         st.markdown("#### 이번 거래에서 얻은 교훈과 개선점을 적어보세요")
@@ -406,74 +638,8 @@ def show_trade_review():
         
         # 교훈
         lessons_learned = st.text_area(
-            "이번 거래를 통해 얻은 교훈이 있다면 적어주세요",
+            "이번 거래에서 배운 점은 무엇인가요?",
             height=100,
-            placeholder="예: 감정적 판단보다는 데이터에 기반한 객관적 분석이 중요하다...",
+            placeholder="예: 감정에 휘둘리지 않고 냉정하게 판단해야겠다...",
             key="lessons_learned"
         )
-        
-        # 새로운 투자 원칙 추가
-        new_rule = st.text_input(
-            "이 경험을 바탕으로 새로운 투자 원칙을 만들어보세요",
-            placeholder="예: 급등한 종목은 하루 더 지켜본 후 매수하기",
-            key="new_investment_rule"
-        )
-    
-    # 복기 노트 저장
-    st.markdown("---")
-    
-    col1, col2 = st.columns([1, 1])
-    
-    with col1:
-        if st.button("💾 복기 노트 저장", type="primary", use_container_width=True):
-            # 세션에 복기 노트 저장 (실제 구현에서는 데이터베이스에 저장)
-            if 'review_notes' not in st.session_state:
-                st.session_state.review_notes = []
-            
-            review_note = {
-                'timestamp': datetime.now(),
-                'trade': trade,
-                'emotion_intensity': st.session_state.get('emotion_intensity', 5),
-                'additional_emotions': st.session_state.get('additional_emotions', []),
-                'emotion_description': st.session_state.get('emotion_description', ''),
-                'decision_factors': st.session_state.get('decision_factors', []),
-                'info_sources': st.session_state.get('info_sources', []),
-                'decision_reasoning': st.session_state.get('decision_reasoning', ''),
-                'satisfaction': st.session_state.get('satisfaction', 5),
-                'improvements': st.session_state.get('improvements', ''),
-                'lessons_learned': st.session_state.get('lessons_learned', ''),
-                'new_rule': st.session_state.get('new_investment_rule', '')
-            }
-            
-            st.session_state.review_notes.append(review_note)
-            
-            # 새로운 투자 원칙이 있으면 헌장에 추가
-            if st.session_state.get('new_investment_rule', '').strip():
-                try:
-                    from ml.investment_charter_logic import InvestmentCharter
-                    charter = InvestmentCharter(username)
-                    charter.add_personal_rule(st.session_state.new_investment_rule, "복기에서 학습")
-                    st.success("✅ 복기 노트가 저장되고 새로운 투자 원칙이 헌장에 추가되었습니다!")
-                except:
-                    st.success("✅ 복기 노트가 저장되었습니다!")
-            else:
-                st.success("✅ 복기 노트가 저장되었습니다!")
-            
-            st.balloons()
-    
-    with col2:
-        if st.button("🤖 AI 분석 요청", type="secondary", use_container_width=True):
-            # AI 분석 페이지로 이동하면서 현재 거래 정보 전달
-            st.session_state.ai_analysis_trade = trade
-            st.switch_page("pages/3_AI_Coaching.py")
-
-def main():
-    """메인 함수"""
-    # 사이드바에 사용자 정보 및 네비게이션 표시
-    show_user_switcher_sidebar()
-    
-    # 메인 콘텐츠 표시
-    show_trade_review()
-
-if __name__ == "__main__":
-    main()

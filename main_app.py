@@ -9,7 +9,7 @@ project_root = Path(__file__).parent
 sys.path.append(str(project_root))
 
 from db.user_db import UserDatabase
-from db.principles_db import get_investment_principles
+from db.principles_db import get_investment_principles, get_principle_details
 from utils.ui_components import apply_toss_css
 
 # 페이지 설정
@@ -126,7 +126,8 @@ class SimpleAuthManager:
         # 관련 세션 상태 초기화
         keys_to_clear = [
             'selected_principle', 'selected_trade_for_review',
-            'cash', 'portfolio', 'history', 'market_data', 'chart_data'
+            'cash', 'portfolio', 'history', 'market_data', 'chart_data',
+            'survey_completed', 'recommended_principle'
         ]
         
         for key in keys_to_clear:
@@ -164,53 +165,177 @@ class SimpleAuthManager:
                 st.rerun()
 
 def show_principles_onboarding():
-    """투자 원칙 선택 온보딩"""
+    """투자 원칙 선택 온보딩 (설문조사 포함)"""
     st.markdown('''
     <div style="text-align: center; margin-bottom: 2rem;">
         <h1 style="font-size: 2rem; color: var(--text-primary);">
-            투자 대가의 원칙을 선택하세요 🎯
+            투자 성향 분석 🎯
         </h1>
         <p style="color: var(--text-secondary); font-size: 1.1rem;">
-            선택한 원칙이 당신의 투자 여정을 안내합니다
+            간단한 질문으로 당신에게 맞는 투자 방식을 찾아보세요
         </p>
     </div>
     ''', unsafe_allow_html=True)
     
-    principles = get_investment_principles()
+    # 1. 세션 상태 플래그로 플로우 관리
+    if not st.session_state.get('survey_completed', False):
+        # 2. 설문조사 표시
+        st.markdown("### 📋 투자 성향 진단 설문")
+        
+        # 2b. 폼 생성 및 질문들
+        with st.form("investment_survey"):
+            st.markdown("#### 다음 질문들에 답해주세요:")
+            
+            # Q1
+            q1 = st.radio(
+                "**Q1. 투자를 할 때 더 중요하게 생각하는 것은 무엇인가요?**",
+                ["안정적인 수익률 (가치 투자)", "높은 성장 가능성 (성장 투자)"],
+                key="q1"
+            )
+            
+            st.markdown("---")
+            
+            # Q2
+            q2 = st.radio(
+                "**Q2. 당신이 더 잘 이해할 수 있는 기업은 어디인가요?**",
+                ["오랜 기간 검증된 우량 기업 (가치 투자)", "우리 일상을 바꾸는 새로운 기업 (성장 투자)"],
+                key="q2"
+            )
+            
+            st.markdown("---")
+            
+            # Q3
+            q3 = st.radio(
+                "**Q3. 위험에 대한 당신의 생각은 어떤가요?**",
+                ["손실 가능성을 최소화하는 것이 가장 중요하다. (가치 투자)", "큰 수익을 위해 어느 정도의 위험은 감수할 수 있다. (성장 투자)"],
+                key="q3"
+            )
+            
+            # 2c. 제출 버튼
+            submitted = st.form_submit_button("내 투자 성향 분석하기", type="primary", use_container_width=True)
+            
+            # 2d. 폼 제출 시 성향 계산
+            if submitted:
+                # 가치 투자 답변 개수 계산
+                value_investment_count = 0
+                if "가치 투자" in q1:
+                    value_investment_count += 1
+                if "가치 투자" in q2:
+                    value_investment_count += 1
+                if "가치 투자" in q3:
+                    value_investment_count += 1
+                
+                # 2e. 결과에 따른 원칙 추천
+                if value_investment_count >= 2:  # 가치 투자 답변이 더 많음
+                    st.session_state.recommended_principle = "벤저민 그레이엄"
+                else:  # 성장 투자 답변이 더 많음
+                    st.session_state.recommended_principle = "피터 린치"
+                
+                # 2f. 설문 완료 플래그 설정 후 리런
+                st.session_state.survey_completed = True
+                st.rerun()
     
-    col1, col2, col3 = st.columns(3)
-    
-    for i, (name, data) in enumerate(principles.items()):
-        with [col1, col2, col3][i % 3]:
-            st.markdown(f'''
-            <div class="card" style="height: 350px; cursor: pointer;">
-                <div style="text-align: center;">
-                    <div style="font-size: 3rem; margin-bottom: 1rem;">{data['icon']}</div>
-                    <h3 style="color: var(--text-primary); margin-bottom: 1rem;">{name}</h3>
-                    <p style="color: var(--text-secondary); font-size: 14px; line-height: 1.5; margin-bottom: 1rem;">
-                        {data['description']}
-                    </p>
-                    <div style="background-color: #F8FAFC; padding: 12px; border-radius: 8px; margin-bottom: 1rem;">
-                        <p style="font-style: italic; font-size: 13px; color: var(--text-light); margin: 0;">
-                            "{data['philosophy'][:60]}..."
+    else:
+        # 3. 설문 완료 후 추천 결과 표시
+        recommended = st.session_state.recommended_principle
+        
+        # 3b. 추천 결과를 눈에 띄게 표시
+        st.markdown(f'''
+        <div style="background: linear-gradient(135deg, #EBF4FF 0%, #E0F2FE 100%); 
+                    border: 2px solid #3182F6; border-radius: 20px; padding: 30px; 
+                    text-align: center; margin: 2rem 0;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">🎉</div>
+            <h2 style="color: #3182F6; margin-bottom: 1rem; font-size: 1.8rem;">
+                분석 완료!
+            </h2>
+            <h3 style="color: var(--text-primary); margin-bottom: 1.5rem; font-size: 1.4rem;">
+                AI가 당신의 성향을 분석한 결과,<br>
+                <strong style="color: #3182F6; font-size: 1.6rem;">'{recommended}'</strong>의<br>
+                투자 방식이 가장 적합해 보입니다!
+            </h3>
+        </div>
+        ''', unsafe_allow_html=True)
+        
+        # 추천된 원칙의 상세 정보 표시
+        principle_data = get_principle_details(recommended)
+        if principle_data:
+            col1, col2 = st.columns([1, 2])
+            
+            with col1:
+                st.markdown(f'''
+                <div style="text-align: center; padding: 2rem; background-color: var(--card-bg); 
+                           border-radius: 15px; margin-bottom: 1rem;">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">{principle_data['icon']}</div>
+                    <h3 style="color: var(--text-primary); margin: 0;">{recommended}</h3>
+                </div>
+                ''', unsafe_allow_html=True)
+            
+            with col2:
+                st.markdown(f"**투자 철학:**")
+                st.info(f'"{principle_data["philosophy"]}"')
+                
+                st.markdown(f"**특징:**")
+                st.write(principle_data["description"])
+                
+                st.markdown(f"**핵심 원칙:**")
+                for principle in principle_data["core_principles"][:3]:
+                    st.markdown(f"• {principle}")
+        
+        # 다른 선택지도 보여주기
+        st.markdown("---")
+        st.markdown("### 🤔 다른 투자 방식도 궁금하신가요?")
+        
+        principles = get_investment_principles()
+        other_principles = [name for name in principles.keys() if name != recommended]
+        
+        col1, col2 = st.columns(2)
+        
+        for i, other_name in enumerate(other_principles):
+            with [col1, col2][i % 2]:
+                other_data = principles[other_name]
+                st.markdown(f'''
+                <div class="card" style="height: 200px; cursor: pointer;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">{other_data['icon']}</div>
+                        <h4 style="color: var(--text-primary); margin-bottom: 0.5rem;">{other_name}</h4>
+                        <p style="color: var(--text-secondary); font-size: 13px; line-height: 1.4;">
+                            {other_data['description'][:80]}...
                         </p>
                     </div>
                 </div>
-            </div>
-            ''', unsafe_allow_html=True)
-            
+                ''', unsafe_allow_html=True)
+                
+                if st.button(f"{other_name} 선택하기", key=f"alt_{other_name}", use_container_width=True):
+                    st.session_state.recommended_principle = other_name
+                    st.rerun()
+        
+        # 3c. 최종 확인 버튼
+        st.markdown("---")
+        col1, col2, col3 = st.columns([1, 2, 1])
+        
+        with col2:
             if st.button(
-                f"{name} 선택하기",
-                key=f"principle_{name}",
-                use_container_width=True,
-                type="primary"
+                "이 원칙으로 투자 여정 시작하기", 
+                key="confirm_principle",
+                type="primary",
+                use_container_width=True
             ):
-                st.session_state.selected_principle = name
+                # 3d. 원래 로직 실행
+                st.session_state.selected_principle = recommended
                 st.session_state.onboarding_needed = None
-                st.success(f"✅ {name}의 투자 원칙을 선택하셨습니다!")
+                st.success(f"✅ {recommended}의 투자 원칙을 선택하셨습니다!")
                 st.balloons()
                 time.sleep(2)
                 st.rerun()
+        
+        # 설문 다시하기 옵션
+        st.markdown('<div style="text-align: center; margin-top: 1rem;">', unsafe_allow_html=True)
+        if st.button("🔄 설문 다시하기", key="retake_survey"):
+            st.session_state.survey_completed = False
+            if 'recommended_principle' in st.session_state:
+                del st.session_state.recommended_principle
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
 def show_trade_selection_onboarding():
     """거래 선택 온보딩"""
