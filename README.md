@@ -1,1 +1,0 @@
-# KB_AI_CHALLANGE

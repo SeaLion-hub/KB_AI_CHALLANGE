@@ -71,13 +71,46 @@ memo_templates = {
     ]
 }
 
-# Market news templates for FOMO trades
-market_news_templates = [
-    "[기업] {종목명} 신제품 출시 발표로 급등|[시장] 해당 업종 전반 강세|[증권] 목표주가 상향 조정 러시",
-    "[경제] 정부 지원책 발표로 관련주 부각|[시장] 개인투자자 매수세 급증|[증권] 외국인 순매수 전환",
-    "[기업] 어닝 서프라이즈 발표 후 급등|[시장] 동종업계 동반 상승|[증권] 증권사 매수 추천 확산",
-    "[정치] 관련 규제 완화 기대감|[시장] 테마주 급등 랠리|[증권] 기관 매수 물량 유입",
-    "[국제] 글로벌 동종업체 호실적|[시장] 수급 불균형으로 급등|[증권] 공매도 잔량 급감"
+# 기술적 분석 템플릿
+technical_analysis_templates = [
+    "RSI 과매수 구간 진입으로 단기 조정 예상",
+    "이동평균선 상향 돌파로 상승 모멘텀 확인",
+    "볼린저밴드 상단 이탈로 강한 상승세 지속",
+    "MACD 데드크로스 형성으로 하락 전환 우려",
+    "저항선 돌파 실패로 반락 가능성 증가",
+    "거래량 감소와 함께 상승 동력 약화",
+    "쐐기형 패턴 완성으로 급등 후 조정 예상",
+    "피보나치 확장 161.8% 도달로 과열 구간",
+    "일목균형표 구름대 상단 저항 직면",
+    "스토캐스틱 과매수에서 베어리시 다이버전스"
+]
+
+# 뉴스 분석 템플릿  
+news_analysis_templates = [
+    "어닝 서프라이즈 발표로 시장 기대감 급상승",
+    "정부 지원 정책 발표로 관련주 테마 부각",
+    "글로벌 트렌드 변화로 성장주 선호도 증가",
+    "경쟁사 부진으로 상대적 경쟁력 부각",
+    "신기술 도입 지연으로 성장 둔화 우려",
+    "대규모 투자 계획 발표로 미래 가치 기대",
+    "해외 수주 확대로 수출 기업 수혜 기대",
+    "업계 재편 가속화로 구조 조정 압력 증가",
+    "친환경 정책 강화로 관련 산업 수혜 예상",
+    "금리 인하 기대감으로 성장주 재평가"
+]
+
+# 감정 분석 템플릿
+emotion_analysis_templates = [
+    "급등 상황에서 놓칠까 봐 하는 조급한 투자 심리",
+    "주변 성공 사례에 자극받아 따라 하는 심리",
+    "손실 회복을 위한 무모한 도박성 투자",
+    "확실한 수익을 보장받을 수 있다는 착각",
+    "시장 상황 변화에 대한 과도한 낙관론",
+    "전문가 의견에만 의존하는 수동적 태도",
+    "단기 수익에만 집중하는 근시안적 사고",
+    "체계적 분석을 통한 냉정한 투자 접근",
+    "유행과 트렌드에 휩쓸리기 쉬운 성향",
+    "감정적 흥분 상태에서 비합리적 판단"
 ]
 
 # Generate data
@@ -101,12 +134,6 @@ for i in range(120):
     memo_template = np.random.choice(memo_templates[emotion])
     memo = memo_template.format(종목명=stock['종목명'])
     
-    # Add market news for key FOMO trades
-    market_news = ""
-    if emotion in ['#추격매수', '#욕심'] and return_pct < -10:
-        market_news_template = np.random.choice(market_news_templates)
-        market_news = market_news_template.format(종목명=stock['종목명'])
-    
     trade = {
         '거래일시': trade_date,
         '종목명': stock['종목명'],
@@ -118,7 +145,9 @@ for i in range(120):
         '메모': memo,
         '수익률': round(return_pct, 2),
         '코스피지수': round(2400 + np.random.normal(0, 100), 2),
-        '시장뉴스': market_news
+        '기술분석': np.random.choice(technical_analysis_templates),
+        '뉴스분석': np.random.choice(news_analysis_templates),
+        '감정분석': np.random.choice(emotion_analysis_templates)
     }
     trades.append(trade)
 
