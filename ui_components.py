@@ -6,7 +6,8 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import time
-from ai_service import analyze_trade_with_ai
+from ai_service import analyze_trade_with_ai, check_api_key
+from trading_service import format_currency_smart, calculate_expected_pnl
 
 def render_css():
     """CSS 스타일 렌더링"""
@@ -33,10 +34,6 @@ def render_css():
             font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
         }
 
-
-            background-color: var(--bg-color);
-        }
-
         .metric-card {
             background-color: var(--card-bg);
             border-radius: 20px;
@@ -44,6 +41,9 @@ def render_css():
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
             border: 1px solid var(--border-color);
             text-align: center;
+            from datetime import datetime, timedelta
+            import time
+            from ai_service import analyze_trade_with_ai, check_api_key
             height: 140px;
             display: flex;
             flex-direction: column;
@@ -53,6 +53,7 @@ def render_css():
         .metric-label {
             font-size: 14px;
             font-weight: 600;
+                "render_api_status"
             color: var(--text-light);
             margin-bottom: 8px;
         }
@@ -143,6 +144,19 @@ def render_css():
             margin-bottom: 16px;
         }
 
+        .pnl-preview {
+            background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+            border: 1px solid #86EFAC;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 12px 0;
+        }
+
+        .pnl-preview.negative {
+            background: linear-gradient(135deg, #FEF2F2 0%, #FECACA 100%);
+            border: 1px solid #F87171;
+        }
+
         .live-indicator {
             display: inline-flex;
             align-items: center;
@@ -160,6 +174,24 @@ def render_css():
             animation: pulse 2s infinite;
         }
 
+        .api-status {
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .api-status.active {
+            background-color: #D1FAE5;
+            color: #059669;
+        }
+
+        .api-status.inactive {
+            background-color: #FEE2E2;
+            color: #DC2626;
+        }
+
         @keyframes pulse {
             0% { opacity: 1; }
             50% { opacity: 0.5; }
@@ -167,6 +199,53 @@ def render_css():
         }
     </style>
     """, unsafe_allow_html=True)
+
+def render_api_status():
+    """API 키 상태 표시"""
+    if check_api_key():
+        st.markdown("""
+        <div style="background-color: #D1FAE5; color: #059669; padding: 8px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 16px; text-align: center;">
+            🟢 AI 기능 활성화됨
+        </div>
+        """, unsafe_allow_html=True)
+        return True
+    else:
+        st.markdown("""
+        <div style="background-color: #FEE2E2; color: #DC2626; padding: 8px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 16px; text-align: center;">
+            🔴 AI 기능 비활성화
+        </div>
+        """, unsafe_allow_html=True)
+        
+        with st.expander("🔑 API 키 설정 방법", expanded=False):
+            st.markdown("""
+            **OpenAI API 키 설정이 필요합니다:**
+            
+            1. [OpenAI 웹사이트](https://platform.openai.com/api-keys)에서 API 키 생성
+            2. 아래 입력창에 API 키 입력
+            3. AI 분석 기능 활용
+            
+            ⚠️ **주의:** API 키는 안전하게 보관하세요!
+            """)
+            
+            api_key = st.text_input(
+                "OpenAI API 키 입력", 
+                type="password", 
+                key="api_key_input",
+                placeholder="sk-proj-..."
+            )
+            
+            if st.button("💾 API 키 저장", key="save_api_key", use_container_width=True):
+                if api_key and api_key.startswith("sk-"):
+                    st.session_state.openai_api_key = api_key
+                    st.success("✅ API 키가 저장되었습니다!")
+                    st.balloons()
+                    time.sleep(1)
+                    st.rerun()
+                elif api_key:
+                    st.error("❌ 올바른 OpenAI API 키 형식이 아닙니다. 'sk-'로 시작해야 합니다.")
+                else:
+                    st.warning("⚠️ API 키를 입력해주세요.")
+        return False
 
 def render_metric_card(label, value, value_type="normal"):
     """메트릭 카드 렌더링"""
@@ -183,6 +262,30 @@ def render_metric_card(label, value, value_type="normal"):
         <div class="metric-value {value_class}">{value}</div>
     </div>
     '''
+
+def render_expected_pnl(expected_pnl_info):
+    """예상 손익 표시"""
+    if not expected_pnl_info:
+        return
+    
+    pnl = expected_pnl_info['expected_pnl']
+    pnl_pct = expected_pnl_info['pnl_percentage']
+    
+    pnl_class = "" if pnl >= 0 else "negative"
+    pnl_sign = "+" if pnl >= 0 else ""
+    color = "#059669" if pnl >= 0 else "#DC2626"
+    
+    st.markdown(f'''
+    <div class="pnl-preview {pnl_class}">
+        <div style="font-weight: 700; font-size: 16px; color: {color}; margin-bottom: 8px;">
+            📈 예상 손익: {pnl_sign}{format_currency_smart(abs(pnl))} ({pnl_pct:+.1f}%)
+        </div>
+        <div style="font-size: 14px; color: #505967;">
+            평균매수가: {format_currency_smart(expected_pnl_info['avg_buy_price'])} → 
+            매도가: {format_currency_smart(expected_pnl_info['sell_price'])}
+        </div>
+    </div>
+    ''', unsafe_allow_html=True)
 
 def create_live_chart(chart_data):
     """실시간 차트 생성"""
@@ -233,12 +336,14 @@ def show_charge_modal():
         format="%d"
     )
     
+    st.markdown(f"**충전 후 잔고**: {format_currency_smart(st.session_state.cash + charge_amount)}")
+    
     col1, col2 = st.columns(2)
     
     with col1:
         if st.button("💳 충전하기", key="confirm_charge", use_container_width=True):
             st.session_state.cash += charge_amount
-            st.success(f"✅ ₩{charge_amount:,}원이 충전되었습니다!")
+            st.success(f"✅ {format_currency_smart(charge_amount)}이 충전되었습니다!")
             st.balloons()
             st.session_state.show_charge_modal = False
             time.sleep(2)
@@ -264,14 +369,26 @@ def show_ai_trade_review():
             <div>
                 <strong>종목:</strong> {trade['stock_name']}<br>
                 <strong>거래유형:</strong> {trade['trade_type']}<br>
-                <strong>수량:</strong> {trade['quantity']}주<br>
-                <strong>가격:</strong> ₩{trade['price']:,}<br>
-                <strong>총액:</strong> ₩{trade['quantity'] * trade['price']:,}
+                <strong>수량:</strong> {trade['quantity']:,}주<br>
+                <strong>가격:</strong> {format_currency_smart(trade['price'])}<br>
+                <strong>총액:</strong> {format_currency_smart(trade['quantity'] * trade['price'])}
             </div>
         </div>
         ''', unsafe_allow_html=True)
         
-        if st.session_state.user_loss_notes or not st.session_state.user_data.empty:
+        # 예상 손익 표시 (매도인 경우)
+        if trade['trade_type'] == "매도":
+            expected_pnl = calculate_expected_pnl(
+                trade['stock_name'], 
+                trade['trade_type'], 
+                trade['quantity'], 
+                trade['price'], 
+                st.session_state.portfolio
+            )
+            if expected_pnl:
+                render_expected_pnl(expected_pnl)
+        
+        if not st.session_state.user_data.empty:
             with st.spinner("AI가 과거 CSV 거래 데이터와 비교 분석 중..."):
                 # AI 분석 실행 (CSV 데이터 사용)
                 analysis_result = analyze_trade_with_ai(
@@ -279,75 +396,72 @@ def show_ai_trade_review():
                     trade['trade_type'], 
                     trade['quantity'], 
                     trade['price'],
-                    st.session_state.user_data  # CSV 데이터 전달
+                    st.session_state.user_data
                 )
                 
-                if analysis_result:
-                    st.markdown("### 📊 AI 분석 결과")
+                if analysis_result and 'similar_trades' in analysis_result:
+                    similar_trades = analysis_result['similar_trades']
                     
-                    # JSON 파싱 성공시
-                    if 'raw_response' not in analysis_result:
-                        # 기술 분석
-                        st.markdown("#### 📈 기술 분석 비교")
-                        tech_similarity = np.random.randint(60, 95)
-                        similarity_class = "similarity-high" if tech_similarity >= 80 else "similarity-medium" if tech_similarity >= 60 else "similarity-low"
+                    if similar_trades:
+                        st.markdown("### 📊 유사한 과거 거래 발견")
                         
-                        st.markdown(f'''
-                        <div class="card">
-                            <span class="similarity-badge {similarity_class}">유사도 {tech_similarity}%</span><br>
-                            <strong>유사한 과거 거래:</strong> 2024-03-15 삼성전자 매도<br>
-                            <strong>유사한 이유:</strong> RSI 과매도 구간에서의 반등 매수 패턴과 유사<br>
-                            <strong>당시 결과:</strong> -12.3% 손실<br>
-                            <strong>CSV 데이터 기반:</strong> 기술분석 패턴이 과거 거래와 매칭됨
-                        </div>
-                        ''', unsafe_allow_html=True)
+                        # 상위 5개 유사 거래 표시
+                        for i, similar in enumerate(similar_trades[:5], 1):
+                            trade_data = similar['trade']
+                            similarity = similar['similarity'] * 100
+                            
+                            # 유사도 등급 결정
+                            if similarity >= 70:
+                                similarity_class = "similarity-high"
+                                similarity_text = "높음"
+                            elif similarity >= 50:
+                                similarity_class = "similarity-medium"  
+                                similarity_text = "보통"
+                            else:
+                                similarity_class = "similarity-low"
+                                similarity_text = "낮음"
+                            
+                            result_color = "#DC2626" if similar['result'] < 0 else "#059669"
+                            
+                            result_color = "#DC2626" if similar['result'] < 0 else "#059669"
+                            
+                            st.markdown(f"""
+                            <div style="background-color: #FFFFFF; border-radius: 16px; padding: 20px; margin: 16px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #E5E8EB;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                    <h4 style="margin: 0; color: #191919;">유사 거래 #{i}</h4>
+                                    <span class="similarity-badge {similarity_class}">유사도 {similarity:.0f}% ({similarity_text})</span>
+                                </div>
+                                
+                                <div style="margin-bottom: 12px;">
+                                    <strong>📅 거래일:</strong> {similar['date']}<br>
+                                    <strong>📊 종목:</strong> {trade_data.get('종목명', 'N/A')} ({trade_data.get('거래구분', 'N/A')})<br>
+                                    <strong>💫 감정상태:</strong> {trade_data.get('감정태그', 'N/A')}<br>
+                                    <strong style="color: {result_color};">💰 결과:</strong> <span style="color: {result_color};">{similar['result']:+.1f}%</span>
+                                </div>
+                                
+                                <div style="background-color: #F8FAFC; padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+                                    <strong>🔍 유사한 이유:</strong> {', '.join(similar['reasons'])}
+                                </div>
+                                
+                                <div style="font-size: 14px; color: #505967;">
+                                    <strong>📝 당시 메모:</strong> "{trade_data.get('메모', 'N/A')}"
+                                </div>
+                            </div>
+                            """, unsafe_allow_html=True)
                         
-                        # 뉴스 분석
-                        st.markdown("#### 📰 뉴스/펀더멘털 분석 비교")
-                        news_similarity = np.random.randint(55, 90)
-                        similarity_class = "similarity-high" if news_similarity >= 80 else "similarity-medium" if news_similarity >= 60 else "similarity-low"
-                        
-                        st.markdown(f'''
-                        <div class="card">
-                            <span class="similarity-badge {similarity_class}">유사도 {news_similarity}%</span><br>
-                            <strong>유사한 과거 거래:</strong> 2024-02-20 카카오 매수<br>
-                            <strong>유사한 이유:</strong> 실적 발표 전 기대감 매수와 유사한 패턴<br>
-                            <strong>당시 결과:</strong> +3.2% 수익<br>
-                            <strong>CSV 데이터 기반:</strong> 뉴스분석 내용이 과거 거래와 유사함
-                        </div>
-                        ''', unsafe_allow_html=True)
-                        
-                        # 감정 분석
-                        st.markdown("#### 😔 감정 분석 비교")
-                        emotion_similarity = np.random.randint(70, 95)
-                        similarity_class = "similarity-high" if emotion_similarity >= 80 else "similarity-medium" if emotion_similarity >= 60 else "similarity-low"
-                        
-                        st.markdown(f'''
-                        <div class="card">
-                            <span class="similarity-badge {similarity_class}">유사도 {emotion_similarity}%</span><br>
-                            <strong>유사한 과거 거래:</strong> 2024-01-25 하이브 추격매수<br>
-                            <strong>유사한 이유:</strong> FOMO 심리와 급등 종목 추격 패턴이 유사<br>
-                            <strong>당시 결과:</strong> -18.7% 손실<br>
-                            <strong>CSV 데이터 기반:</strong> 감정분석 및 감정태그가 일치함
-                        </div>
-                        ''', unsafe_allow_html=True)
-                    
+                        # AI 종합 분석 (API 키가 있는 경우)
+                        if 'ai_analysis' in analysis_result and analysis_result['ai_analysis']:
+                            st.markdown("### 🤖 AI 종합 분석")
+                            st.markdown(f"""
+                            <div style="background: linear-gradient(135deg, #EBF4FF 0%, #E0F2FE 100%); border: 2px solid #3182F6; border-radius: 20px; padding: 24px; margin: 20px 0;">
+                                <div style="font-size: 18px; font-weight: 700; color: #3182F6; margin-bottom: 16px; display: flex; align-items: center;">
+                                    💡 AI 조언
+                                </div>
+                                <div style="line-height: 1.6; color: #505967;">{analysis_result['ai_analysis']}</div>
+                            </div>
+                            """, unsafe_allow_html=True)
                     else:
-                        # JSON 파싱 실패시 원시 응답 표시
-                        st.markdown("#### 🤖 AI 분석 의견")
-                        st.write(analysis_result['raw_response'])
-                    
-                    # AI 권장사항
-                    st.markdown("### 💡 AI 권장사항")
-                    recommendations = [
-                        "과거 유사한 패턴에서 손실이 발생했으니 신중히 고려하세요",
-                        "감정적 거래보다는 객관적 지표를 확인해보세요", 
-                        "24시간 냉각기간을 가진 후 재검토하는 것을 권장합니다",
-                        "분할 매수/매도를 통해 리스크를 분산시켜보세요"
-                    ]
-                    
-                    for i, rec in enumerate(recommendations, 1):
-                        st.markdown(f"**{i}.** {rec}")
+                        st.info("💡 유사한 과거 거래를 찾을 수 없습니다.")
                 else:
                     st.error("AI 분석 중 오류가 발생했습니다.")
         else:
@@ -357,7 +471,13 @@ def show_ai_trade_review():
         col1, col2 = st.columns(2)
         
         with col1:
-            if st.button("✅ 분석 결과를 반영하여 거래 실행", key="execute_after_review", use_container_width=True, type="primary"):
+            button_disabled = not check_api_key() and not st.session_state.user_data.empty
+            if st.button("✅ 분석 결과를 반영하여 거래 실행", 
+                        key="execute_after_review", 
+                        use_container_width=True, 
+                        type="primary",
+                        disabled=False):  # 항상 실행 가능하도록
+                
                 from trading_service import execute_trade, add_trade_to_history
                 
                 success, message, loss_info, portfolio, cash = execute_trade(
@@ -407,9 +527,10 @@ def show_loss_modal(loss_info):
     <div class="loss-alert">
         <div class="loss-alert-title">📉 손실이 발생했습니다</div>
         <div class="loss-alert-content">
-            <strong>{loss_info['stock_name']}</strong> {loss_info['quantity']}주 매도에서<br>
-            <strong>₩{loss_info['loss_amount']:,.0f}원 ({loss_info['loss_percentage']:.1f}%)</strong> 손실이 발생했습니다.<br><br>
-            매수가: <strong>₩{loss_info['buy_price']:,.0f}</strong> → 매도가: <strong>₩{loss_info['sell_price']:,.0f}</strong>
+            <strong>{loss_info['stock_name']}</strong> {loss_info['quantity']:,}주 매도에서<br>
+            <strong>{format_currency_smart(loss_info['loss_amount'])} ({loss_info['loss_percentage']:.1f}%)</strong> 손실이 발생했습니다.<br><br>
+            매수가: <strong>{format_currency_smart(loss_info['buy_price'])}</strong> → 
+            매도가: <strong>{format_currency_smart(loss_info['sell_price'])}</strong>
         </div>
     </div>
     ''', unsafe_allow_html=True)
@@ -439,8 +560,8 @@ def show_loss_analysis(loss_info):
     <div class="loss-alert">
         <div class="loss-alert-title">📊 손실 거래 상세 분석</div>
         <div class="loss-alert-content">
-            <strong>{loss_info['stock_name']}</strong> {loss_info['quantity']}주 매도 분석<br>
-            손실: <strong>₩{loss_info['loss_amount']:,.0f}원 ({loss_info['loss_percentage']:.1f}%)</strong>
+            <strong>{loss_info['stock_name']}</strong> {loss_info['quantity']:,}주 매도 분석<br>
+            손실: <strong>{format_currency_smart(loss_info['loss_amount'])} ({loss_info['loss_percentage']:.1f}%)</strong>
         </div>
     </div>
     ''', unsafe_allow_html=True)
@@ -452,8 +573,8 @@ def show_loss_analysis(loss_info):
         st.markdown("#### 📈 기술 분석")
         st.markdown(f"""
         **{loss_info['stock_name']} 기술적 분석 요약:**
-        - 매수가: ₩{loss_info['buy_price']:,.0f}
-        - 매도가: ₩{loss_info['sell_price']:,.0f}
+        - 매수가: {format_currency_smart(loss_info['buy_price'])}
+        - 매도가: {format_currency_smart(loss_info['sell_price'])}
         - 손실률: {loss_info['loss_percentage']:.1f}%
         
         **분석 포인트:**
