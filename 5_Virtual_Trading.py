@@ -6,15 +6,17 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import time
 from pathlib import Path
+from main_app import SessionKeys
 
 # 프로젝트 루트 디렉토리를 Python 경로에 추가
 project_root = Path(__file__).parent.parent
 sys.path.append(str(project_root))
 
-
 from utils.ui_components import apply_toss_css, create_mirror_coaching_card
-from db.central_data_manager import get_market_data, get_user_trading_history, add_user_trade
-from db.central_data_manager import get_data_manager, get_market_data, get_user_profile, add_user_trade
+from db.central_data_manager import (
+    get_data_manager, get_market_data, get_user_profile,
+    get_user_trading_history, add_user_trade
+)
 
 # 페이지 설정
 st.set_page_config(
@@ -27,13 +29,13 @@ st.set_page_config(
 apply_toss_css()
 
 # 로그인 확인
-if 'current_user' not in st.session_state or st.session_state.current_user is None:
+if st.session_state.get(SessionKeys.USER) is None:
     st.error("⚠️ 로그인이 필요합니다.")
     if st.button("🏠 홈으로 돌아가기"):
         st.switch_page("main_app.py")
     st.stop()
 
-user = st.session_state.current_user
+user = st.session_state[SessionKeys.USER]
 username = user['username']
 
 # 포트폴리오 초기화
@@ -45,7 +47,8 @@ def initialize_portfolio(username: str, initial_capital=50_000_000):
     if 'portfolio' not in st.session_state:
         trades_list = get_user_trading_history(username)
         cash = initial_capital
-        holdings = {} # {'종목명': {'shares': 수량, 'avg_price': 평단가}}
+        holdings = {}  # {'종목명': {'shares': 수량, 'avg_price': 평단가}}
+        history = []   # 포트폴리오 내부 거래 히스토리
 
         if trades_list:
             trades_df = pd.DataFrame(trades_list).sort_values(by='거래일시')
@@ -68,8 +71,28 @@ def initialize_portfolio(username: str, initial_capital=50_000_000):
                         holdings[stock_name]['shares'] -= trade['수량']
                         if holdings[stock_name]['shares'] <= 0:
                             del holdings[stock_name]
-        
-        st.session_state.portfolio = {'cash': cash, 'holdings': holdings}
+
+                # (선택) 과거 거래를 포트폴리오 history 형식으로 적재
+                try:
+                    ts = pd.to_datetime(trade['거래일시']).to_pydatetime()
+                except Exception:
+                    ts = datetime.now()
+                history.append({
+                    'timestamp': ts,
+                    'stock_name': stock_name,
+                    'action': 'buy' if trade['거래구분'] == '매수' else 'sell',
+                    'shares': int(trade['수량']),
+                    'price': float(trade['가격']),
+                    'total_amount': float(trade_cost),
+                    'emotion': trade.get('감정태그', ''),
+                    'memo': trade.get('메모', ''),
+                    'confidence': trade.get('확신도', 5),
+                    'portfolio_value_after': None
+                })
+
+        # ✅ history를 같은 딕셔너리 안에 넣어줍니다
+        st.session_state.portfolio = {'cash': cash, 'holdings': holdings, 'history': history}
+        # 레거시 접근을 쓰는 코드가 있다면 참고용으로 남겨둠
         st.session_state.history = trades_list
 
 def show_market_overview():
@@ -131,7 +154,7 @@ def show_market_overview():
         create_enhanced_metric_card(
             "보유 현금",
             f"{portfolio['cash']:,.0f}원",
-            f"{portfolio['cash']/total_value*100:.1f}%"
+            f"{(portfolio['cash']/total_value*100) if total_value else 0:.1f}%"
         )
     
     with col4:
@@ -203,6 +226,32 @@ def show_stock_card(stock_name, stock_data):
     # 보유 여부 확인
     holding_info = portfolio['holdings'].get(stock_name, {})
     is_holding = len(holding_info) > 0
+
+    # 🔧 중첩 f-string이 Ellipsis를 유발할 수 있어 분리
+    holding_html = ""
+    if is_holding:
+        pnl_pct = ((stock_data.current_price - holding_info['avg_price']) / holding_info['avg_price'] * 100) if holding_info['avg_price'] else 0
+        holding_html = f"""
+        <div style="background: #F0F9FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+            <div style="color: var(--text-primary); font-weight: 600; margin-bottom: 0.5rem;">📊 보유 현황</div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; font-size: 0.85rem;">
+                <div>
+                    <div style="color: var(--text-light);">보유수량</div>
+                    <div style="font-weight: 600;">{holding_info['shares']:,}주</div>
+                </div>
+                <div>
+                    <div style="color: var(--text-light);">평균단가</div>
+                    <div style="font-weight: 600;">{holding_info['avg_price']:,}원</div>
+                </div>
+                <div>
+                    <div style="color: var(--text-light);">손익률</div>
+                    <div style="font-weight: 600; color: {change_color};">
+                        {pnl_pct:+.1f}%
+                    </div>
+                </div>
+            </div>
+        </div>
+        """
     
     col1, col2 = st.columns([3, 1])
     
@@ -213,7 +262,7 @@ def show_stock_card(stock_name, stock_data):
                 <div>
                     <h4 style="margin: 0; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
                         {stock_name}
-                        {f'<span style="background: #EBF4FF; color: #3B82F6; padding: 0.2rem 0.5rem; border-radius: 8px; font-size: 0.7rem;">보유중</span>' if is_holding else ''}
+                        {('<span style="background: #EBF4FF; color: #3B82F6; padding: 0.2rem 0.5rem; border-radius: 8px; font-size: 0.7rem;">보유중</span>' if is_holding else '')}
                     </h4>
                     <div style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">
                         {stock_data.sector} • PER {stock_data.per:.1f} • PBR {stock_data.pbr:.2f}
@@ -249,28 +298,8 @@ def show_stock_card(stock_name, stock_data):
                     </div>
                 </div>
             </div>
-            
-            {f'''
-            <div style="background: #F0F9FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
-                <div style="color: var(--text-primary); font-weight: 600; margin-bottom: 0.5rem;">📊 보유 현황</div>
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; font-size: 0.85rem;">
-                    <div>
-                        <div style="color: var(--text-light);">보유수량</div>
-                        <div style="font-weight: 600;">{holding_info['shares']:,}주</div>
-                    </div>
-                    <div>
-                        <div style="color: var(--text-light);">평균단가</div>
-                        <div style="font-weight: 600;">{holding_info['avg_price']:,}원</div>
-                    </div>
-                    <div>
-                        <div style="color: var(--text-light);">손익률</div>
-                        <div style="font-weight: 600; color: {change_color};">
-                            {((stock_data.current_price - holding_info['avg_price']) / holding_info['avg_price'] * 100):+.1f}%
-                        </div>
-                    </div>
-                </div>
-            </div>
-            ''' if is_holding else ''}
+
+            {holding_html}
         </div>
         ''', unsafe_allow_html=True)
     
@@ -331,12 +360,13 @@ def show_trading_modal():
             st.info(f"현재가: {stock_data.current_price:,}원")
             
             if action == "buy":
-                max_shares = int(portfolio['cash'] * 0.9 / stock_data.current_price)  # 90%까지만 사용
+                max_shares = int(portfolio['cash'] * 0.9 / stock_data.current_price) if stock_data.current_price else 0
+                max_shares = max(max_shares, 0)
                 shares = st.number_input(
                     f"매수 수량 (최대 {max_shares:,}주)",
                     min_value=1,
-                    max_value=max_shares,
-                    value=min(100, max_shares),
+                    max_value=max_shares if max_shares > 0 else 1,
+                    value=min(100, max_shares) if max_shares > 0 else 1,
                     step=10
                 )
             else:  # sell
@@ -410,7 +440,7 @@ def execute_trade(stock_name, action, shares, price, emotion, memo, confidence):
                 old_avg_price = portfolio['holdings'][stock_name]['avg_price']
                 
                 new_total_shares = old_shares + shares
-                new_avg_price = ((old_shares * old_avg_price) + (shares * price)) / new_total_shares
+                new_avg_price = ((old_shares * old_avg_price) + (shares * price)) / new_total_shares if new_total_shares else price
                 
                 portfolio['holdings'][stock_name] = {
                     'shares': new_total_shares,
@@ -450,26 +480,26 @@ def execute_trade(stock_name, action, shares, price, emotion, memo, confidence):
             'portfolio_value_after': calculate_portfolio_value()
         }
         
+        # ✅ 항상 존재하도록 initialize에서 보장했지만, 방어 코드 한 줄
+        if 'history' not in portfolio:
+            portfolio['history'] = []
         portfolio['history'].append(trade_record)
         
-        # 중앙 데이터 매니저에 거래 저장
+        # 중앙 데이터 매니저에 거래 저장 (이거울: 시뮬레이션)
         user_profile = get_user_profile(username)
         if user_profile and user_profile.username == "이거울":
-            # 이거울 사용자의 경우 시뮬레이션 데이터로 저장
             return_pct = np.random.normal(0, 10)  # 임시 수익률
             
-            # 거래 데이터를 중앙 매니저에 추가
             trade_data = {
                 "거래일시": datetime.now().strftime("%Y-%m-%d"),
                 "종목명": stock_name,
-                "거래구분": action,
+                "거래구분": "매수" if action == "buy" else "매도",
                 "수량": shares,
                 "가격": price,
                 "수익률": return_pct,
                 "감정태그": emotion,
                 "메모": memo
             }
-            
             add_user_trade(username, trade_data)
         
         # 성공 메시지
@@ -478,9 +508,9 @@ def execute_trade(stock_name, action, shares, price, emotion, memo, confidence):
         st.balloons()
         
         # 세션 상태 정리
-        del st.session_state.selected_stock
-        del st.session_state.selected_action
-        del st.session_state.stock_data
+        for key in ("selected_stock", "selected_action", "stock_data"):
+            if key in st.session_state:
+                del st.session_state[key]
         
         time.sleep(2)
         st.rerun()
@@ -509,11 +539,9 @@ def show_ai_coaching_for_stock(stock_name, stock_data):
     
     # 과거 거래 패턴 분석
     if user_profile and user_profile.username != "이거울":
-        from db.central_data_manager import get_user_trading_history
         trades_data = get_user_trading_history(username)
         
         if trades_data:
-            # DataFrame으로 변환
             trades_df = pd.DataFrame(trades_data)
             stock_trades = trades_df[trades_df['종목명'] == stock_name]
             
@@ -587,7 +615,7 @@ def show_portfolio_summary():
             investment = holding['shares'] * holding['avg_price']
             current_value = holding['shares'] * market_data[stock].current_price
             profit_loss = current_value - investment
-            profit_loss_pct = (profit_loss / investment) * 100
+            profit_loss_pct = (profit_loss / investment) * 100 if investment else 0
             
             total_investment += investment
             total_current_value += current_value
@@ -672,7 +700,8 @@ def show_trading_history():
 
 # 메인 로직
 def main():
-    initialize_portfolio()
+    # ✅ username 전달해서 TypeError 방지
+    initialize_portfolio(username)
     
     # 거래 모달 표시 (우선순위)
     if 'selected_stock' in st.session_state and 'selected_action' in st.session_state:

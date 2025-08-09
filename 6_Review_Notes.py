@@ -5,7 +5,7 @@ import numpy as np
 from datetime import datetime, timedelta
 import time
 from pathlib import Path
-
+from main_app import SessionKeys
 # 프로젝트 루트 디렉토리를 Python 경로에 추가
 project_root = Path(__file__).parent.parent
 sys.path.append(str(project_root))
@@ -24,13 +24,13 @@ st.set_page_config(
 apply_toss_css()
 
 # 로그인 확인
-if 'current_user' not in st.session_state or st.session_state.current_user is None:
+if st.session_state.get(SessionKeys.USER) is None:
     st.error("⚠️ 로그인이 필요합니다.")
     if st.button("🏠 홈으로 돌아가기"):
         st.switch_page("main_app.py")
     st.stop()
 
-user = st.session_state.current_user
+user = st.session_state[SessionKeys.USER]
 username = user['username']
 
 def initialize_sample_notes():
