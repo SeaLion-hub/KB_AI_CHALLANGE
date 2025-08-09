@@ -1,0 +1,33 @@
+[
+  {
+    "title": "반도체 수요 증가로 삼성전자, SK하이닉스 주가 상승 전망",
+    "content": "AI 및 데이터센터 수요 급증으로 메모리 반도체 업계에 호재...",
+    "timestamp": "2024-08-09T09:00:00",
+    "category": "IT",
+    "impact": "positive",
+    "related_stocks": [
+      "삼성전자",
+      "SK하이닉스"
+    ]
+  },
+  {
+    "title": "전기차 시장 둔화 우려로 자동차주 약세",
+    "content": "글로벌 전기차 판매 증가율 둔화로 관련 업체들 주가 하락...",
+    "timestamp": "2024-08-09T10:30:00",
+    "category": "자동차",
+    "impact": "negative",
+    "related_stocks": [
+      "현대차"
+    ]
+  },
+  {
+    "title": "코스피 2450선 회복, 외국인 순매수 지속",
+    "content": "외국인 투자자들의 지속적인 순매수로 코스피 지수가 상승세...",
+    "timestamp": "2024-08-09T11:15:00",
+    "category": "시장",
+    "impact": "positive",
+    "related_stocks": [
+      "전체"
+    ]
+  }
+]

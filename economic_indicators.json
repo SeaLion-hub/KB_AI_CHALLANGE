@@ -1,0 +1,22 @@
+{
+  "KOSPI": {
+    "current": 2450.32,
+    "change": 12.45,
+    "change_pct": 0.51,
+    "volume": 8500000
+  },
+  "KOSDAQ": {
+    "current": 750.25,
+    "change": -3.21,
+    "change_pct": -0.43,
+    "volume": 5200000
+  },
+  "USD_KRW": {
+    "current": 1340.5,
+    "change": 5.2,
+    "change_pct": 0.39
+  },
+  "interest_rate": 3.5,
+  "inflation_rate": 2.4,
+  "unemployment_rate": 2.8
+}

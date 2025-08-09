@@ -1,0 +1,35 @@
+{
+  "이거울": {
+    "username": "이거울",
+    "user_type": "신규",
+    "description": "투자를 처음 시작하는 신규 사용자",
+    "icon": "🆕",
+    "color": "#3182F6",
+    "badge": "NEW",
+    "subtitle": "거래 데이터 없음 • 투자 원칙 학습 필요",
+    "onboarding_type": "principles",
+    "demo_trades_count": 0
+  },
+  "박투자": {
+    "username": "박투자",
+    "user_type": "기존_reflex처음",
+    "description": "FOMO 매수 경향이 있는 기존 고객",
+    "icon": "🔄",
+    "color": "#FF9500",
+    "badge": "ACTIVE",
+    "subtitle": "1,500건 거래 데이터 • 추격매수 패턴 분석 필요",
+    "onboarding_type": "trade_selection",
+    "demo_trades_count": 1500
+  },
+  "김국민": {
+    "username": "김국민",
+    "user_type": "기존_reflex사용중",
+    "description": "공포 매도 경향, Reflex 기존 사용자",
+    "icon": "⭐",
+    "color": "#14AE5C",
+    "badge": "PRO",
+    "subtitle": "1,500건 거래 데이터 • 복기 노트 보유",
+    "onboarding_type": null,
+    "demo_trades_count": 1500
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "app": {
+    "title": "KB Reflex - AI 투자 심리 코칭",
+    "icon": "🧠",
+    "layout": "wide",
+    "demo_password": "demo123"
+  },
+  "features": [
+    {
+      "id": "dashboard",
+      "name": "실시간 대시보드",
+      "icon": "📊",
+      "description": "• 실시간 포트폴리오 현황<br>• AI 투자 인사이트<br>• 스마트 거래 브리핑",
+      "background": "linear-gradient(135deg, #EBF4FF 0%, #DBEAFE 100%)",
+      "border": "#93C5FD",
+      "button_color": "#3B82F6",
+      "badge": "실시간 업데이트",
+      "page": "pages/1_Dashboard.py"
+    },
+    {
+      "id": "review",
+      "name": "거울 복기",
+      "icon": "🪞",
+      "description": "• 상황 재현 복기<br>• AI 패턴 분석<br>• 유사 경험 매칭",
+      "background": "linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)",
+      "border": "#FACC15",
+      "button_color": "#F59E0B",
+      "badge": "핵심 기능",
+      "page": "pages/2_Trade_Review.py"
+    },
+    {
+      "id": "coaching",
+      "name": "AI 심리 코칭",
+      "icon": "🤖",
+      "description": "• 딥러닝 심리 분석<br>• 개인화된 코칭<br>• 실시간 피드백",
+      "background": "linear-gradient(135deg, #DCFCE7 0%, #BBF7D0 100%)",
+      "border": "#86EFAC",
+      "button_color": "#10B981",
+      "badge": "AI 엔진",
+      "page": "pages/3_AI_Coaching.py"
+    }
+  ],
+  "additional_features": [
+    {
+      "id": "charter",
+      "name": "나의 투자 헌장",
+      "icon": "📜",
+      "page": "pages/4_Investment_Charter.py"
+    },
+    {
+      "id": "settings",
+      "name": "설정 및 분석",
+      "icon": "⚙️",
+      "page": "pages/5_Settings.py"
+    }
+  ],
+  "ui_settings": {
+    "primary_color": "#3182F6",
+    "success_color": "#14AE5C",
+    "warning_color": "#FF9500",
+    "danger_color": "#DC2626",
+    "border_radius": "12px",
+    "card_shadow": "0 5px 15px rgba(0,0,0,0.1)"
+  }
+}

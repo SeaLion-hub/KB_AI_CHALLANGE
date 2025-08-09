@@ -1,0 +1,97 @@
+{
+  "welcome_messages": {
+    "이거울": {
+      "title": "🎯 투자 여정을 시작합니다!",
+      "color": "#3182F6",
+      "items": [
+        "✨ AI가 추천한 투자 철학으로 시작",
+        "🎓 체계적인 학습과 실전 연습",
+        "🪞 객관적인 자기 분석 도구 활용"
+      ]
+    },
+    "박투자": {
+      "title": "🔍 FOMO 패턴 개선 중!",
+      "color": "#FF9500",
+      "items": [
+        "📊 {trading_count}건 거래 데이터 분석 완료",
+        "⚡ 추격매수 패턴 집중 개선 필요",
+        "🎯 냉정한 투자 습관 형성 목표"
+      ]
+    },
+    "김국민": {
+      "title": "🛡️ 감정 관리 마스터링!",
+      "color": "#14AE5C",
+      "items": [
+        "📈 {trading_count}건 거래 복기 데이터 보유",
+        "🧘‍♂️ 공포 매도 극복 프로그램 진행",
+        "📜 개인화된 투자 헌장 구축"
+      ]
+    }
+  },
+  "survey_questions": [
+    {
+      "id": "q1",
+      "question": "**Q1. 투자할 때 가장 중요하게 생각하는 것은?**",
+      "options": [
+        {
+          "text": "📊 안정적이고 꾸준한 수익률",
+          "value": "stable",
+          "weight": 1
+        },
+        {
+          "text": "🚀 높은 성장 가능성과 기회",
+          "value": "growth",
+          "weight": 0
+        }
+      ]
+    },
+    {
+      "id": "q2",
+      "question": "**Q2. 어떤 기업에 더 끌리시나요?**",
+      "options": [
+        {
+          "text": "🏢 오랜 역사와 안정성을 자랑하는 우량 기업",
+          "value": "stable",
+          "weight": 1
+        },
+        {
+          "text": "💡 혁신적이고 미래를 바꿀 새로운 기업",
+          "value": "growth",
+          "weight": 0
+        }
+      ]
+    },
+    {
+      "id": "q3",
+      "question": "**Q3. 투자에서 위험에 대한 당신의 철학은?**",
+      "options": [
+        {
+          "text": "🛡️ 손실을 최소화하는 것이 최우선",
+          "value": "conservative",
+          "weight": 1
+        },
+        {
+          "text": "⚡ 큰 수익을 위해서는 위험도 감수",
+          "value": "aggressive",
+          "weight": 0
+        }
+      ]
+    }
+  ],
+  "principle_recommendations": {
+    "conservative": "벤저민 그레이엄",
+    "growth": "피터 린치"
+  },
+  "onboarding_messages": {
+    "principles": {
+      "title": "투자 성향 분석",
+      "subtitle": "AI가 당신에게 맞는 투자 방식을 찾아드립니다",
+      "icon": "🎯"
+    },
+    "trade_selection": {
+      "title": "복기할 거래 선택",
+      "subtitle": "{username}님의 과거 거래를 AI가 분석하여 추천해드립니다",
+      "icon": "📊"
+    }
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "005930": {
+    "name": "삼성전자",
+    "base_price": 65000,
+    "sector": "IT",
+    "market_cap": "대형"
+  },
+  "000660": {
+    "name": "SK하이닉스",
+    "base_price": 120000,
+    "sector": "IT",
+    "market_cap": "대형"
+  },
+  "035420": {
+    "name": "NAVER",
+    "base_price": 180000,
+    "sector": "IT",
+    "market_cap": "대형"
+  },
+  "035720": {
+    "name": "카카오",
+    "base_price": 45000,
+    "sector": "IT",
+    "market_cap": "대형"
+  },
+  "051910": {
+    "name": "LG화학",
+    "base_price": 380000,
+    "sector": "화학",
+    "market_cap": "대형"
+  },
+  "005380": {
+    "name": "현대차",
+    "base_price": 180000,
+    "sector": "자동차",
+    "market_cap": "대형"
+  },
+  "005490": {
+    "name": "POSCO홀딩스",
+    "base_price": 350000,
+    "sector": "철강",
+    "market_cap": "대형"
+  },
+  "015760": {
+    "name": "한국전력",
+    "base_price": 22000,
+    "sector": "전력",
+    "market_cap": "대형"
+  },
+  "105560": {
+    "name": "KB금융",
+    "base_price": 48000,
+    "sector": "금융",
+    "market_cap": "대형"
+  },
+  "066570": {
+    "name": "LG전자",
+    "base_price": 95000,
+    "sector": "전자",
+    "market_cap": "대형"
+  },
+  "068270": {
+    "name": "셀트리온",
+    "base_price": 160000,
+    "sector": "바이오",
+    "market_cap": "대형"
+  },
+  "017670": {
+    "name": "SK텔레콤",
+    "base_price": 52000,
+    "sector": "통신",
+    "market_cap": "대형"
+  }
+}
