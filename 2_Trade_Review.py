@@ -5,6 +5,7 @@
 # - 사용자 텍스트에 sanitize_html_text() 적용하여 HTML 안전성 강화
 # - CSS 클래스명 통일: emotion-tag-enhanced → emotion-tag
 # - 불필요한 임포트 제거 및 코드 최적화
+# - HTML 렌더링 문제 수정: render_html() 대신 st.markdown(..., unsafe_allow_html=True) 직접 사용
 
 import streamlit as st
 import sys
@@ -18,7 +19,7 @@ import re
 project_root = Path(__file__).parent.parent
 sys.path.append(str(project_root))
 
-from utils.ui_components import apply_toss_css, create_mirror_coaching_card, render_html
+from utils.ui_components import apply_toss_css, create_mirror_coaching_card
 from ml.mirror_coaching import MirrorCoaching
 from db.central_data_manager import get_data_manager, get_user_trading_history, get_user_profile
 
@@ -26,15 +27,13 @@ from db.central_data_manager import get_data_manager, get_user_trading_history, 
 # [UTILITY FUNCTIONS]
 # ================================
 
-def sanitize_html_text(text: str) -> str:
-    """HTML 안전장치: 기본적인 텍스트 살균"""
+def sanitize_text_content(text: str) -> str:
+    """텍스트 내용만 안전하게 처리 (HTML 태그는 건드리지 않음)"""
     if not isinstance(text, str):
         return str(text)
     
-    # < > 문자 제거, 줄바꿈만 허용
-    sanitized = re.sub(r'[<>]', '', text)
-    # 줄바꿈을 <br>로 변환
-    sanitized = sanitized.replace('\n', '<br>')
+    # 기본적인 텍스트만 정리 (HTML 태그 유지)
+    sanitized = str(text).replace('"', '&quot;').replace("'", '&#39;')
     return sanitized
 
 def safe_navigate_to_page(page_path: str):
@@ -91,22 +90,22 @@ username = user['username']
 
 def show_trade_selection_interface():
     """거래 선택 인터페이스"""
-    safe_username = sanitize_html_text(username)
+    safe_username = sanitize_text_content(username)
     
-    render_html(f'''
+    st.markdown(f'''
     <div class="main-header-enhanced">
         🪞 거울 복기 - 거래 선택
     </div>
     <div class="sub-header-enhanced">
         {safe_username}님, 복기하고 싶은 거래를 선택하거나 AI 추천을 받아보세요
     </div>
-    ''')
+    ''', unsafe_allow_html=True)
     
     # 사용자 프로필 확인
     try:
         user_profile = get_user_profile(username)
     except Exception as e:
-        st.error(f"❌ 사용자 프로필 로드 실패: {sanitize_html_text(str(e))}")
+        st.error(f"❌ 사용자 프로필 로드 실패: {str(e)}")
         return
     
     if not user_profile or user_profile.username == "이거울":
@@ -117,7 +116,7 @@ def show_trade_selection_interface():
     try:
         trades_data = get_user_trading_history(username)
     except Exception as e:
-        st.error(f"❌ 거래 데이터 로드 실패: {sanitize_html_text(str(e))}")
+        st.error(f"❌ 거래 데이터 로드 실패: {str(e)}")
         st.info("💡 **해결방법**: 페이지를 새로고침하거나 다른 사용자로 로그인해보세요.")
         return
     
@@ -131,7 +130,7 @@ def show_trade_selection_interface():
         trades_df = pd.DataFrame(trades_data)
         trades_df['거래일시'] = pd.to_datetime(trades_df['거래일시'])
     except Exception as e:
-        st.error(f"❌ 거래 데이터 처리 실패: {sanitize_html_text(str(e))}")
+        st.error(f"❌ 거래 데이터 처리 실패: {str(e)}")
         return
     
     # 탭 인터페이스
@@ -148,7 +147,7 @@ def show_trade_selection_interface():
 
 def show_beginner_mirror_experience():
     """초보자를 위한 거울 경험"""
-    render_html('''
+    st.markdown('''
     <div class="mirror-coaching-card">
         <div class="mirror-coaching-content">
             <div class="mirror-coaching-title">
@@ -160,7 +159,7 @@ def show_beginner_mirror_experience():
             </div>
         </div>
     </div>
-    ''')
+    ''', unsafe_allow_html=True)
     
     # 시뮬레이션 케이스 선택 (동적 로딩 가능하도록 구성)
     demo_cases = get_demo_cases()
@@ -172,12 +171,12 @@ def show_beginner_mirror_experience():
         
         with col1:
             result_color = "#14AE5C" if case['result'].startswith('+') else "#DC2626"
-            safe_title = sanitize_html_text(case['title'])
-            safe_description = sanitize_html_text(case['description'])
-            safe_lesson = sanitize_html_text(case['lesson'])
-            safe_emotion = sanitize_html_text(case['emotion'])
+            safe_title = sanitize_text_content(case['title'])
+            safe_description = sanitize_text_content(case['description'])
+            safe_lesson = sanitize_text_content(case['lesson'])
+            safe_emotion = sanitize_text_content(case['emotion'])
             
-            render_html(f'''
+            st.markdown(f'''
             <div class="premium-card">
                 <h4 style="color: var(--text-primary); margin-bottom: 1rem;">{safe_title}</h4>
                 <p style="color: var(--text-secondary); margin-bottom: 1rem;">{safe_description}</p>
@@ -195,7 +194,7 @@ def show_beginner_mirror_experience():
                     </div>
                 </div>
             </div>
-            ''')
+            ''', unsafe_allow_html=True)
         
         with col2:
             if st.button(f"🪞 체험하기", key=f"demo_case_{i}", use_container_width=True):
@@ -236,7 +235,7 @@ def show_ai_recommended_trades(trades_data):
     try:
         mirror_coach = MirrorCoaching()
     except Exception as e:
-        st.warning(f"⚠️ AI 코칭 시스템 초기화 실패: {sanitize_html_text(str(e))}")
+        st.warning(f"⚠️ AI 코칭 시스템 초기화 실패: {str(e)}")
         mirror_coach = None
     
     # 추천 거래 로직 개선
@@ -261,7 +260,7 @@ def show_ai_recommended_trades(trades_data):
                 for _, trade in failure_trades.iterrows():
                     show_trade_card(trade, "failure")
         except Exception as e:
-            st.error(f"❌ AI 추천 처리 실패: {sanitize_html_text(str(e))}")
+            st.error(f"❌ AI 추천 처리 실패: {str(e)}")
     else:
         st.warning("복기 추천 거래를 생성할 수 없습니다.")
 
@@ -296,7 +295,7 @@ def show_all_trades_list(trades_data):
         for _, trade in sorted_trades.head(limit).iterrows():
             show_trade_card(trade, "normal")
     except Exception as e:
-        st.error(f"❌ 거래 정렬 처리 실패: {sanitize_html_text(str(e))}")
+        st.error(f"❌ 거래 정렬 처리 실패: {str(e)}")
 
 def show_filtered_trades(trades_data):
     """필터 검색"""
@@ -353,93 +352,84 @@ def show_filtered_trades(trades_data):
         for _, trade in filtered_trades.head(20).iterrows():
             show_trade_card(trade, "normal")
     except Exception as e:
-        st.error(f"❌ 필터 검색 처리 실패: {sanitize_html_text(str(e))}")
+        st.error(f"❌ 필터 검색 처리 실패: {str(e)}")
+
+import streamlit as st
+import streamlit.components.v1 as components
 
 def show_trade_card(trade, card_type):
-    """거래 카드 표시 (안전한 텍스트 처리)"""
+    """거래 카드 표시 (components.html 버전)"""
     try:
+        # 수익률 색상
         profit_color = "#14AE5C" if trade['수익률'] >= 0 else "#DC2626"
         
+        # 카드 스타일 선택
         if card_type == "success":
             card_bg = "#F0FDF4"
             border_color = "#86EFAC"
             icon = "🎯"
         elif card_type == "failure":
-            card_bg = "#FEF2F2" 
+            card_bg = "#FEF2F2"
             border_color = "#FECACA"
             icon = "📚"
         else:
             card_bg = "white"
-            border_color = "var(--border-color)"
+            border_color = "#E5E7EB"
             icon = "📊"
         
-        col1, col2 = st.columns([4, 1])
+        # 데이터 안전 처리
+        safe_stock_name = str(trade['종목명'])
+        safe_memo = str(trade.get('메모', ''))[:100]
+        safe_trade_type = str(trade['거래구분'])
+        safe_emotion_tag = str(trade.get('감정태그', '#욕심'))
+
+        trade_date = trade['거래일시']
+        trade_date_str = trade_date if isinstance(trade_date, str) else trade_date.strftime('%Y-%m-%d')
+
+        memo_display = f'{safe_memo}{"..." if len(safe_memo) == 100 else ""}'
         
-        with col1:
-            # 안전한 텍스트 처리
-            safe_stock_name = sanitize_html_text(str(trade['종목명']))
-            safe_memo = sanitize_html_text(str(trade.get('메모', '')))[:100]
-            safe_trade_type = sanitize_html_text(str(trade['거래구분']))
-            emotion_tag = str(trade.get('감정태그', '#욕심'))
-            safe_emotion_tag = sanitize_html_text(emotion_tag)
-            
-            # 거래일시가 문자열인 경우 datetime으로 변환
-            trade_date = trade['거래일시']
-            if isinstance(trade_date, str):
-                trade_date_str = trade_date
-            else:
-                trade_date_str = trade_date.strftime('%Y-%m-%d')
-            
-            card_html = f'''
-            <div style="
-                background: {card_bg};
-                border: 2px solid {border_color};
-                border-radius: 16px;
-                padding: 1.5rem;
-                margin-bottom: 1rem;
-            ">
-                <div style="display: flex; align-items: center; margin-bottom: 1rem;">
-                    <span style="font-size: 1.5rem; margin-right: 0.5rem;">{icon}</span>
-                    <h4 style="margin: 0; color: var(--text-primary); flex: 1;">{safe_stock_name}</h4>
-                    <div style="text-align: right;">
-                        <div style="color: {profit_color}; font-weight: 700; font-size: 1.2rem;">
-                            {trade['수익률']:+.1f}%
-                        </div>
-                    </div>
-                </div>
-                
-                <div style="margin-bottom: 1rem;">
-                    <div style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.5rem;">
-                        📅 {trade_date_str} • {safe_trade_type} • {trade['수량']}주 • {trade['가격']:,}원
-                    </div>
-                    <div style="
-                        background: rgba(255,255,255,0.7);
-                        padding: 0.75rem;
-                        border-radius: 8px;
-                        font-size: 0.85rem;
-                        color: var(--text-secondary);
-                        font-style: italic;
-                    ">
-                        "{safe_memo}{"..." if len(safe_memo) == 100 else ""}"
-                    </div>
-                </div>
-                
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span class="emotion-tag emotion-{emotion_tag.replace('#', '')}">{safe_emotion_tag}</span>
+        # HTML 카드 템플릿
+        html_code = f"""
+        <div style="
+            background: {card_bg};
+            border: 2px solid {border_color};
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            font-family: sans-serif;
+        ">
+            <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                <span style="font-size: 1.5rem; margin-right: 0.5rem;">{icon}</span>
+                <h4 style="margin: 0; flex: 1;">{safe_stock_name}</h4>
+                <div style="text-align: right; color: {profit_color}; font-weight: 700; font-size: 1.2rem;">
+                    {trade['수익률']:+.1f}%
                 </div>
             </div>
-            '''
-            render_html(card_html)
-        
-        with col2:
-            # 거래일시와 종목명을 키로 사용
-            trade_key = f"{trade_date_str}_{safe_stock_name}_{trade['수량']}"
-            if st.button("🪞 복기하기", key=f"review_{trade_key}", use_container_width=True):
-                st.session_state.selected_trade_for_review = trade.to_dict()
-                st.session_state.review_mode = "real"
-                st.rerun()
+            <div style="margin-bottom: 1rem; font-size: 0.9rem; color: #6B7280;">
+                📅 {trade_date_str} • {safe_trade_type} • {trade['수량']}주 • {trade['가격']:,}원
+            </div>
+            <div style="
+                background: rgba(255,255,255,0.7);
+                padding: 0.75rem;
+                border-radius: 8px;
+                font-size: 0.85rem;
+                color: #6B7280;
+                font-style: italic;
+            ">
+                "{memo_display}"
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                <span style="color: #374151;">{safe_emotion_tag}</span>
+            </div>
+        </div>
+        """
+
+        # HTML 렌더링
+        components.html(html_code, height=250)
+    
     except Exception as e:
-        st.error(f"❌ 거래 카드 렌더링 실패: {sanitize_html_text(str(e))}")
+        st.error(f"❌ 거래 카드 렌더링 실패: {str(e)}")
+
 
 def show_trade_review_analysis():
     """선택된 거래의 상세 복기 분석"""
@@ -456,15 +446,15 @@ def show_trade_review_analysis():
         return
     
     # 헤더 (안전한 텍스트 처리)
-    safe_stock_name = sanitize_html_text(str(trade['종목명']))
-    render_html(f'''
+    safe_stock_name = sanitize_text_content(str(trade['종목명']))
+    st.markdown(f'''
     <div class="main-header-enhanced">
         🪞 거울 복기 - {safe_stock_name} 분석
     </div>
     <div class="sub-header-enhanced">
         AI가 당신의 과거 패턴을 분석하여 인사이트를 제공합니다
     </div>
-    ''')
+    ''', unsafe_allow_html=True)
     
     # 뒤로가기 버튼
     if st.button("🔙 거래 목록으로", key="back_to_trades"):
@@ -486,15 +476,15 @@ def show_demo_review_analysis():
     if not case:
         return
     
-    safe_title = sanitize_html_text(case['title'])
-    render_html(f'''
+    safe_title = sanitize_text_content(case['title'])
+    st.markdown(f'''
     <div class="main-header-enhanced">
         🪞 거울 복기 체험 - {safe_title}
     </div>
     <div class="sub-header-enhanced">
         실제 투자자의 사례를 통해 거울 복기를 체험해보세요
     </div>
-    ''')
+    ''', unsafe_allow_html=True)
     
     if st.button("🔙 체험 선택으로", key="back_to_demo"):
         st.session_state.demo_case = None
@@ -512,7 +502,7 @@ def show_demo_review_analysis():
 def show_fear_selling_demo():
     """공포매도 사례 데모"""
     # 상황 재현
-    render_html('''
+    st.markdown('''
     <div class="premium-card">
         <div class="premium-card-title">📊 상황 재현</div>
         <div style="background: #FEF2F2; padding: 1.5rem; border-radius: 12px; margin-top: 1rem;">
@@ -525,7 +515,7 @@ def show_fear_selling_demo():
             </ul>
         </div>
     </div>
-    ''')
+    ''', unsafe_allow_html=True)
     
     # AI 거울 분석
     create_mirror_coaching_card(
@@ -543,7 +533,7 @@ def show_fear_selling_demo():
     )
     
     # 학습 포인트
-    render_html('''
+    st.markdown('''
     <div class="premium-card">
         <div class="premium-card-title">💡 핵심 학습 포인트</div>
         <div style="margin-top: 1rem;">
@@ -561,11 +551,11 @@ def show_fear_selling_demo():
             </div>
         </div>
     </div>
-    ''')
+    ''', unsafe_allow_html=True)
 
 def show_fomo_buying_demo():
     """FOMO 매수 사례 데모"""
-    render_html('''
+    st.markdown('''
     <div class="premium-card">
         <div class="premium-card-title">📊 상황 재현</div>
         <div style="background: #FEF3C7; padding: 1.5rem; border-radius: 12px; margin-top: 1rem;">
@@ -578,7 +568,7 @@ def show_fomo_buying_demo():
             </ul>
         </div>
     </div>
-    ''')
+    ''', unsafe_allow_html=True)
     
     create_mirror_coaching_card(
         "AI 패턴 분석 결과",
@@ -596,7 +586,7 @@ def show_fomo_buying_demo():
 
 def show_rational_investing_demo():
     """합리적 투자 성공 사례 데모"""
-    render_html('''
+    st.markdown('''
     <div class="premium-card">
         <div class="premium-card-title">📊 상황 재현</div>
         <div style="background: #F0FDF4; padding: 1.5rem; border-radius: 12px; margin-top: 1rem;">
@@ -609,7 +599,7 @@ def show_rational_investing_demo():
             </ul>
         </div>
     </div>
-    ''')
+    ''', unsafe_allow_html=True)
     
     create_mirror_coaching_card(
         "성공 요인 분석",
@@ -631,11 +621,11 @@ def show_trade_overview_card(trade):
         profit_color = "#14AE5C" if trade['수익률'] >= 0 else "#DC2626"
         
         # 안전한 텍스트 처리
-        safe_stock_name = sanitize_html_text(str(trade['종목명']))
-        safe_trade_type = sanitize_html_text(str(trade['거래구분']))
-        safe_memo = sanitize_html_text(str(trade.get('메모', '메모 없음')))
+        safe_stock_name = sanitize_text_content(str(trade['종목명']))
+        safe_trade_type = sanitize_text_content(str(trade['거래구분']))
+        safe_memo = sanitize_text_content(str(trade.get('메모', '메모 없음')))
         emotion_tag = str(trade.get('감정태그', '#욕심'))
-        safe_emotion_tag = sanitize_html_text(emotion_tag)
+        safe_emotion_tag = sanitize_text_content(emotion_tag)
         
         # 거래일시 처리
         trade_date = trade['거래일시']
@@ -644,7 +634,7 @@ def show_trade_overview_card(trade):
         else:
             trade_date_str = trade_date.strftime('%Y-%m-%d')
         
-        render_html(f'''
+        st.markdown(f'''
         <div class="premium-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
                 <div>
@@ -687,9 +677,9 @@ def show_trade_overview_card(trade):
                 </p>
             </div>
         </div>
-        ''')
+        ''', unsafe_allow_html=True)
     except Exception as e:
-        st.error(f"❌ 거래 개요 카드 렌더링 실패: {sanitize_html_text(str(e))}")
+        st.error(f"❌ 거래 개요 카드 렌더링 실패: {str(e)}")
 
 def show_mirror_analysis(trade):
     """AI 거울 분석 표시"""
@@ -702,10 +692,10 @@ def show_mirror_analysis(trade):
         
         with st.spinner("🔍 AI가 유사한 과거 경험을 찾고 있습니다..."):
             # 현재 상황을 텍스트로 구성 (안전한 텍스트 처리)
-            safe_stock_name = sanitize_html_text(str(trade['종목명']))
-            safe_trade_type = sanitize_html_text(str(trade['거래구분']))
-            safe_emotion = sanitize_html_text(str(trade.get('감정태그', '')))
-            safe_memo = sanitize_html_text(str(trade.get('메모', '')))
+            safe_stock_name = sanitize_text_content(str(trade['종목명']))
+            safe_trade_type = sanitize_text_content(str(trade['거래구분']))
+            safe_emotion = sanitize_text_content(str(trade.get('감정태그', '')))
+            safe_memo = sanitize_text_content(str(trade.get('메모', '')))
             
             current_situation = f"{safe_stock_name} {safe_trade_type} 거래, 감정: {safe_emotion}, 메모: {safe_memo}"
             
@@ -715,7 +705,7 @@ def show_mirror_analysis(trade):
                 # 거울 질문 생성
                 mirror_questions = mirror_coach.generate_mirror_questions(similar_experiences, current_situation)
             except Exception as e:
-                st.warning(f"⚠️ 유사 경험 분석 중 오류 발생: {sanitize_html_text(str(e))}")
+                st.warning(f"⚠️ 유사 경험 분석 중 오류 발생: {str(e)}")
                 similar_experiences = []
                 mirror_questions = []
         
@@ -728,14 +718,14 @@ def show_mirror_analysis(trade):
                 similarity_score = exp.get('similarity_score', 0)
                 
                 # 안전한 텍스트 처리
-                safe_exp_stock = sanitize_html_text(str(exp_trade.get('종목명', 'N/A')))
-                safe_exp_date = sanitize_html_text(str(exp_trade.get('거래일시', 'N/A')))
-                safe_exp_emotion = sanitize_html_text(str(exp_trade.get('감정태그', 'N/A')))
-                safe_lesson = sanitize_html_text(str(exp.get('key_lesson', '학습 중')))
+                safe_exp_stock = sanitize_text_content(str(exp_trade.get('종목명', 'N/A')))
+                safe_exp_date = sanitize_text_content(str(exp_trade.get('거래일시', 'N/A')))
+                safe_exp_emotion = sanitize_text_content(str(exp_trade.get('감정태그', 'N/A')))
+                safe_lesson = sanitize_text_content(str(exp.get('key_lesson', '학습 중')))
                 
                 profit_color = '#14AE5C' if exp_trade.get('수익률', 0) > 0 else '#DC2626'
                 
-                render_html(f'''
+                st.markdown(f'''
                 <div class="premium-card" style="margin-bottom: 1rem;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                         <h4 style="margin: 0; color: var(--text-primary);">
@@ -766,7 +756,7 @@ def show_mirror_analysis(trade):
                         </div>
                     </div>
                 </div>
-                ''')
+                ''', unsafe_allow_html=True)
             
             # 거울 질문
             if mirror_questions:
@@ -790,7 +780,7 @@ def show_mirror_analysis(trade):
                 ]
             )
     except Exception as e:
-        st.error(f"❌ AI 거울 분석 실패: {sanitize_html_text(str(e))}")
+        st.error(f"❌ AI 거울 분석 실패: {str(e)}")
         st.info("💡 **해결방법**: 페이지를 새로고침하거나 다른 거래를 선택해보세요.")
 
 def show_review_note_section(trade):
@@ -896,7 +886,7 @@ def show_review_note_section(trade):
                         st.session_state.selected_trade_for_review = None
                         st.rerun()
             except Exception as e:
-                st.error(f"❌ 복기 노트 저장 실패: {sanitize_html_text(str(e))}")
+                st.error(f"❌ 복기 노트 저장 실패: {str(e)}")
 
 # ================================
 # [MAIN APPLICATION]
@@ -910,7 +900,7 @@ def main():
         else:
             show_trade_selection_interface()
     except Exception as e:
-        st.error(f"❌ 페이지 로드 실패: {sanitize_html_text(str(e))}")
+        st.error(f"❌ 페이지 로드 실패: {str(e)}")
         st.info("💡 **해결방법**: 페이지를 새로고침하거나 홈으로 돌아가세요.")
         
         if st.button("🏠 홈으로 돌아가기", type="secondary"):

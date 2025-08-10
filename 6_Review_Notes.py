@@ -286,6 +286,10 @@ def show_notes_list(notes):
     for i, note in enumerate(notes):
         show_note_card(note, i)
 
+import streamlit as st
+import streamlit.components.v1 as components
+import time
+
 def show_note_card(note, index):
     """개별 노트 카드"""
     # 감정에 따른 색상
@@ -296,7 +300,7 @@ def show_note_card(note, index):
     
     emotion = note['reviewed_emotion']
     emotion_color = emotion_colors.get(emotion, '#6B7280')
-    
+
     # 점수에 따른 카드 테두리 색상
     avg_score = (note['decision_score'] + note['emotion_control_score']) / 2
     if avg_score >= 7:
@@ -305,108 +309,102 @@ def show_note_card(note, index):
         border_color = "#F59E0B"
     else:
         border_color = "#EF4444"
-    
-    col1, col2 = st.columns([4, 1])
-    
-    with col1:
-        st.markdown(f'''
-        <div style="
-            background: white;
-            border: 2px solid {border_color};
-            border-radius: 20px;
-            padding: 2rem;
-            margin-bottom: 1.5rem;
-            transition: all 0.3s ease;
-        " class="note-card-{index}">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <div>
-                    <h3 style="margin: 0; color: var(--text-primary); display: flex; align-items: center; gap: 0.75rem;">
-                        {note['stock_name']}
-                        {'⭐' if note.get('is_favorite', False) else ''}
-                    </h3>
-                    <div style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">
-                        거래일: {note['trade_date']} • 복기일: {note['review_date'][:10]}
-                    </div>
-                </div>
-                <div style="text-align: right;">
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <span style="
-                            background: {emotion_color}15;
-                            color: {emotion_color};
-                            padding: 0.5rem 1rem;
-                            border-radius: 16px;
-                            font-size: 0.85rem;
-                            font-weight: 600;
-                            border: 1px solid {emotion_color}30;
-                        ">{emotion}</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 감정 변화 -->
-            <div style="
-                background: #F8FAFC;
-                border-radius: 12px;
-                padding: 1rem;
-                margin-bottom: 1.5rem;
-                border-left: 4px solid {emotion_color};
-            ">
-                <div style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.5rem;">감정 변화</div>
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <span style="color: var(--text-secondary);">{note['original_emotion']}</span>
-                    <span style="color: var(--text-light);">→</span>
-                    <span style="color: {emotion_color}; font-weight: 600;">{note['reviewed_emotion']}</span>
-                </div>
-            </div>
-            
-            <!-- 점수 -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-                <div style="text-align: center; background: #F0F9FF; padding: 1rem; border-radius: 12px;">
-                    <div style="color: var(--text-light); font-size: 0.85rem;">의사결정</div>
-                    <div style="font-size: 1.5rem; font-weight: 700; color: #3B82F6;">{note['decision_score']}/10</div>
-                </div>
-                <div style="text-align: center; background: #F0FDF4; padding: 1rem; border-radius: 12px;">
-                    <div style="color: var(--text-light); font-size: 0.85rem;">감정조절</div>
-                    <div style="font-size: 1.5rem; font-weight: 700; color: #10B981;">{note['emotion_control_score']}/10</div>
-                </div>
-            </div>
-            
-            <!-- 판단 근거 -->
-            <div style="margin-bottom: 1.5rem;">
-                <div style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 0.5rem;">판단 근거</div>
-                <div>
-                    {' '.join([f'<span style="background: #EBF4FF; color: #3B82F6; padding: 0.25rem 0.5rem; border-radius: 8px; font-size: 0.8rem; margin-right: 0.5rem;">{basis}</span>' for basis in note.get('decision_basis', [])])}
-                </div>
-            </div>
-            
-            <!-- 배운 점 -->
-            <div style="margin-bottom: 1.5rem;">
-                <div style="color: var(--text-primary); font-weight: 600; margin-bottom: 0.75rem;">💡 배운 점</div>
-                <div style="color: var(--text-secondary); line-height: 1.6; font-style: italic;">
-                    "{note.get('lessons_learned', '')}"
-                </div>
-            </div>
-            
-            <!-- 향후 원칙 -->
+
+    html_content = f"""
+    <div style="
+        background: white;
+        border: 2px solid {border_color};
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+    " class="note-card-{index}">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
             <div>
-                <div style="color: var(--text-primary); font-weight: 600; margin-bottom: 0.75rem;">📜 향후 원칙</div>
-                <div style="color: var(--text-secondary); line-height: 1.6;">
-                    {note.get('future_principles', '')}
+                <h3 style="margin: 0; color: #111827; display: flex; align-items: center; gap: 0.75rem;">
+                    {note['stock_name']}
+                    {'⭐' if note.get('is_favorite', False) else ''}
+                </h3>
+                <div style="color: #6B7280; font-size: 0.9rem; margin-top: 0.5rem;">
+                    거래일: {note['trade_date']} • 복기일: {note['review_date'][:10]}
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <span style="
+                        background: {emotion_color}15;
+                        color: {emotion_color};
+                        padding: 0.5rem 1rem;
+                        border-radius: 16px;
+                        font-size: 0.85rem;
+                        font-weight: 600;
+                        border: 1px solid {emotion_color}30;
+                    ">{emotion}</span>
                 </div>
             </div>
         </div>
-        
-        <style>
-        .note-card-{index}:hover {{
-            transform: translateY(-4px);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-        }}
-        </style>
-        ''', unsafe_allow_html=True)
-    
+
+        <div style="
+            background: #F8FAFC;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid {emotion_color};
+        ">
+            <div style="font-size: 0.85rem; color: #9CA3AF; margin-bottom: 0.5rem;">감정 변화</div>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <span style="color: #6B7280;">{note['original_emotion']}</span>
+                <span style="color: #9CA3AF;">→</span>
+                <span style="color: {emotion_color}; font-weight: 600;">{note['reviewed_emotion']}</span>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+            <div style="text-align: center; background: #F0F9FF; padding: 1rem; border-radius: 12px;">
+                <div style="color: #9CA3AF; font-size: 0.85rem;">의사결정</div>
+                <div style="font-size: 1.5rem; font-weight: 700; color: #3B82F6;">{note['decision_score']}/10</div>
+            </div>
+            <div style="text-align: center; background: #F0FDF4; padding: 1rem; border-radius: 12px;">
+                <div style="color: #9CA3AF; font-size: 0.85rem;">감정조절</div>
+                <div style="font-size: 1.5rem; font-weight: 700; color: #10B981;">{note['emotion_control_score']}/10</div>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+            <div style="color: #9CA3AF; font-size: 0.85rem; margin-bottom: 0.5rem;">판단 근거</div>
+            <div>
+                {' '.join([f'<span style="background: #EBF4FF; color: #3B82F6; padding: 0.25rem 0.5rem; border-radius: 8px; font-size: 0.8rem; margin-right: 0.5rem;">{basis}</span>' for basis in note.get('decision_basis', [])])}
+            </div>
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+            <div style="color: #111827; font-weight: 600; margin-bottom: 0.75rem;">💡 배운 점</div>
+            <div style="color: #374151; line-height: 1.6; font-style: italic;">
+                "{note.get('lessons_learned', '')}"
+            </div>
+        </div>
+
+        <div>
+            <div style="color: #111827; font-weight: 600; margin-bottom: 0.75rem;">📜 향후 원칙</div>
+            <div style="color: #374151; line-height: 1.6;">
+                {note.get('future_principles', '')}
+            </div>
+        </div>
+    </div>
+
+    <style>
+    .note-card-{index}:hover {{
+        transform: translateY(-4px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+    }}
+    </style>
+    """
+
+    components.html(html_content, height=600, scrolling=True)
+
+    # 우측 버튼 영역
+    col1, col2 = st.columns([4, 1])
     with col2:
-        st.markdown("<br>", unsafe_allow_html=True)  # 간격 맞추기
-        
         if st.button("📝 수정", key=f"edit_note_{index}", use_container_width=True):
             st.session_state.editing_note = note
             st.session_state.editing_index = index
@@ -426,6 +424,7 @@ def show_note_card(note, index):
             if st.button("☆ 즐겨찾기", key=f"fav_note_{index}", use_container_width=True):
                 st.session_state.review_notes[index]['is_favorite'] = True
                 st.rerun()
+
 
 def show_edit_note_modal():
     """노트 수정 모달"""

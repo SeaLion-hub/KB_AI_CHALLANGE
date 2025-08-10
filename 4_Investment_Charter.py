@@ -22,14 +22,35 @@ st.set_page_config(
 # Toss 스타일 CSS 적용
 apply_toss_css()
 
-# 로그인 확인
-if st.session_state.get(SessionKeys.USER) is None:
+# ✅ 수정된 코드 (이것으로 교체)
+# 로그인 상태 확인 (main_app.py와 동일한 키 사용)
+def get_current_user():
+    # 1차: 메인 키 확인
+    user = st.session_state.get('REFLEX_USER')
+    if user:
+        return user
+    
+    # 2차: 백업 키 확인
+    backup_user = st.session_state.get('current_user')
+    if backup_user:
+        # 메인 키에 복사
+        st.session_state['REFLEX_USER'] = backup_user
+        return backup_user
+    
+    return None
+
+# 로그인 체크
+current_user = get_current_user()
+if current_user is None:
     st.error("⚠️ 로그인이 필요합니다.")
     if st.button("🏠 홈으로 돌아가기"):
-        st.switch_page("main_app.py")
+        try:
+            st.switch_page("main_app.py")
+        except:
+            st.rerun()
     st.stop()
 
-user = st.session_state[SessionKeys.USER]
+user = current_user
 username = user['username']
 
 def initialize_user_charter():

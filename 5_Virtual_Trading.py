@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 import time
 from pathlib import Path
 from main_app import SessionKeys
+import streamlit.components.v1 as components
 
 # 프로젝트 루트 디렉토리를 Python 경로에 추가
 project_root = Path(__file__).parent.parent
@@ -219,15 +220,15 @@ def show_stock_list():
         show_stock_card(stock, data)
 
 def show_stock_card(stock_name, stock_data):
-    """개별 종목 카드"""
+    """개별 종목 카드 (components.html 버전)"""
     change_color = "#14AE5C" if stock_data.change_pct > 0 else "#DC2626"
     portfolio = st.session_state.portfolio
-    
+
     # 보유 여부 확인
     holding_info = portfolio['holdings'].get(stock_name, {})
     is_holding = len(holding_info) > 0
 
-    # 🔧 중첩 f-string이 Ellipsis를 유발할 수 있어 분리
+    # 보유 현황 HTML
     holding_html = ""
     if is_holding:
         pnl_pct = ((stock_data.current_price - holding_info['avg_price']) / holding_info['avg_price'] * 100) if holding_info['avg_price'] else 0
@@ -252,76 +253,76 @@ def show_stock_card(stock_name, stock_data):
             </div>
         </div>
         """
-    
-    col1, col2 = st.columns([3, 1])
-    
-    with col1:
-        st.markdown(f'''
-        <div class="premium-card" style="margin-bottom: 1rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <div>
-                    <h4 style="margin: 0; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
-                        {stock_name}
-                        {('<span style="background: #EBF4FF; color: #3B82F6; padding: 0.2rem 0.5rem; border-radius: 8px; font-size: 0.7rem;">보유중</span>' if is_holding else '')}
-                    </h4>
-                    <div style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">
-                        {stock_data.sector} • PER {stock_data.per:.1f} • PBR {stock_data.pbr:.2f}
-                    </div>
-                </div>
-                <div style="text-align: right;">
-                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">
-                        {stock_data.current_price:,.0f}원
-                    </div>
-                    <div style="color: {change_color}; font-weight: 600; font-size: 1rem;">
-                        {stock_data.change:+,.0f}원 ({stock_data.change_pct:+.2f}%)
-                    </div>
-                </div>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; font-size: 0.85rem;">
-                <div>
-                    <div style="color: var(--text-light);">거래량</div>
-                    <div style="font-weight: 600;">{stock_data.volume:,}</div>
-                </div>
-                <div>
-                    <div style="color: var(--text-light);">5일 평균</div>
-                    <div style="font-weight: 600;">{stock_data.ma5:,.0f}원</div>
-                </div>
-                <div>
-                    <div style="color: var(--text-light);">20일 평균</div>
-                    <div style="font-weight: 600;">{stock_data.ma20:,.0f}원</div>
-                </div>
-                <div>
-                    <div style="color: var(--text-light);">RSI</div>
-                    <div style="font-weight: 600; color: {'#DC2626' if stock_data.rsi > 70 else '#14AE5C' if stock_data.rsi < 30 else 'var(--text-primary)'};">
-                        {stock_data.rsi:.0f}
-                    </div>
-                </div>
-            </div>
 
-            {holding_html}
+    # 카드 HTML
+    card_html = f"""
+    <div class="premium-card" style="margin-bottom: 1rem; padding: 1rem; border-radius: 12px; border: 1px solid var(--border-color);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div>
+                <h4 style="margin: 0; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+                    {stock_name}
+                    {('<span style="background: #EBF4FF; color: #3B82F6; padding: 0.2rem 0.5rem; border-radius: 8px; font-size: 0.7rem;">보유중</span>' if is_holding else '')}
+                </h4>
+                <div style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">
+                    {stock_data.sector} • PER {stock_data.per:.1f} • PBR {stock_data.pbr:.2f}
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">
+                    {stock_data.current_price:,.0f}원
+                </div>
+                <div style="color: {change_color}; font-weight: 600; font-size: 1rem;">
+                    {stock_data.change:+,.0f}원 ({stock_data.change_pct:+.2f}%)
+                </div>
+            </div>
         </div>
-        ''', unsafe_allow_html=True)
-    
-    with col2:
-        # 매수/매도 버튼
+
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; font-size: 0.85rem;">
+            <div>
+                <div style="color: var(--text-light);">거래량</div>
+                <div style="font-weight: 600;">{stock_data.volume:,}</div>
+            </div>
+            <div>
+                <div style="color: var(--text-light);">5일 평균</div>
+                <div style="font-weight: 600;">{stock_data.ma5:,.0f}원</div>
+            </div>
+            <div>
+                <div style="color: var(--text-light);">20일 평균</div>
+                <div style="font-weight: 600;">{stock_data.ma20:,.0f}원</div>
+            </div>
+            <div>
+                <div style="color: var(--text-light);">RSI</div>
+                <div style="font-weight: 600; color: {'#DC2626' if stock_data.rsi > 70 else '#14AE5C' if stock_data.rsi < 30 else 'var(--text-primary)'};">
+                    {stock_data.rsi:.0f}
+                </div>
+            </div>
+        </div>
+
+        {holding_html}
+    </div>
+    """
+
+    # HTML 렌더링
+    components.html(card_html, height=350, scrolling=False)
+
+    # 버튼 영역
+    col1, col2, col3 = st.columns(3)
+    with col1:
         if st.button(f"🛒 매수", key=f"buy_{stock_name}", use_container_width=True, type="primary"):
             st.session_state.selected_stock = stock_name
             st.session_state.selected_action = "buy"
             st.session_state.stock_data = stock_data
             st.rerun()
-        
-        if is_holding:
-            if st.button(f"💰 매도", key=f"sell_{stock_name}", use_container_width=True):
-                st.session_state.selected_stock = stock_name
-                st.session_state.selected_action = "sell"
-                st.session_state.stock_data = stock_data
-                st.rerun()
-        
-        # AI 코칭 버튼
+    with col2:
+        if is_holding and st.button(f"💰 매도", key=f"sell_{stock_name}", use_container_width=True):
+            st.session_state.selected_stock = stock_name
+            st.session_state.selected_action = "sell"
+            st.session_state.stock_data = stock_data
+            st.rerun()
+    with col3:
         if st.button(f"🤖 AI 코칭", key=f"ai_coach_{stock_name}", use_container_width=True):
             show_ai_coaching_for_stock(stock_name, stock_data)
-
+            
 def show_trading_modal():
     """거래 모달"""
     if 'selected_stock' not in st.session_state:

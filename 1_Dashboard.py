@@ -45,6 +45,10 @@ if st.session_state.get(REFLEX_USER_KEY) is None:
 user = st.session_state[REFLEX_USER_KEY]
 username = user.get('username', '사용자')
 
+# render_html 함수 임시 정의 (HTML 렌더링 수정)
+def render_html(html):
+    st.markdown(html, unsafe_allow_html=True)
+
 # 대시보드 초기화
 @st.cache_data(ttl=30)  # 30초간 캐시
 def initialize_dashboard_data(username):
@@ -201,7 +205,7 @@ def show_enhanced_dashboard():
 
         for stock_name, data in hot_stocks:
             change_color = "#14AE5C" if data.change_pct > 0 else "#DC2626"
-            render_html(f'''
+            st.markdown(f'''
             <div style="
                 background: white;
                 border: 1px solid var(--border-color);
@@ -225,7 +229,7 @@ def show_enhanced_dashboard():
                     </div>
                 </div>
             </div>
-            ''')
+            ''', unsafe_allow_html=True)
 
     # 뉴스 섹션 추가
     show_market_news_section()
@@ -470,7 +474,7 @@ def show_holdings_detail(holdings, market_data):
 
             color = "#14AE5C" if profit_loss >= 0 else "#DC2626"
 
-            render_html(f'''
+            st.markdown(f'''
             <div class="premium-card" style="margin-bottom: 1rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                     <h4 style="margin: 0; color: var(--text-primary);">{stock}</h4>
@@ -499,7 +503,7 @@ def show_holdings_detail(holdings, market_data):
                     </div>
                 </div>
             </div>
-            ''')
+            ''', unsafe_allow_html=True)
 
 def show_recent_trades(recent_trades):
     """최근 거래 내역"""
@@ -509,7 +513,7 @@ def show_recent_trades(recent_trades):
     for trade in recent_trades:
         profit_color = "#14AE5C" if trade['수익률'] >= 0 else "#DC2626"
 
-        render_html(f'''
+        st.markdown(f'''
         <div class="trade-item-enhanced">
             <div class="trade-header">
                 <div class="trade-stock-name">{trade['종목명']}</div>
@@ -524,7 +528,7 @@ def show_recent_trades(recent_trades):
                 💭 {trade.get('메모', 'N/A')[:100]}
             </div>
         </div>
-        ''')
+        ''', unsafe_allow_html=True)
 
 # 메인 실행
 show_enhanced_dashboard()
