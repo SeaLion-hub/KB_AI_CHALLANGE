@@ -1,0 +1,30 @@
+{
+  "typography": {
+    "primary_font": "'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif",
+    "header_font_size": "3rem",
+    "subheader_font_size": "1.4rem", 
+    "body_font_size": "1rem",
+    "small_font_size": "0.8rem"
+  },
+  "spacing": {
+    "card_padding": "1.5rem",
+    "section_margin": "2rem",
+    "component_gap": "1rem"
+  },
+  "borders": {
+    "border_radius": "12px",
+    "card_border_radius": "16px",
+    "button_border_radius": "8px",
+    "border_width": "2px"
+  },
+  "shadows": {
+    "card_shadow": "0 4px 12px rgba(0,0,0,0.1)",
+    "hover_shadow": "0 8px 24px rgba(255,221,0,0.2)",
+    "button_shadow": "0 2px 4px rgba(0,0,0,0.1)"
+  },
+  "animations": {
+    "transition_duration": "0.3s",
+    "hover_transform": "translateY(-4px)",
+    "button_hover_transform": "translateY(-2px)"
+  }
+}

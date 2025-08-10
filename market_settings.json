@@ -1,0 +1,32 @@
+{
+  "trading_hours": {
+    "market_open": "09:00",
+    "market_close": "15:30",
+    "weekend_trading": false
+  },
+  "volatility_settings": {
+    "market_session_multiplier": 1.0,
+    "after_hours_multiplier": 0.3,
+    "weekend_multiplier": 0.1
+  },
+  "volume_settings": {
+    "base_volume": 1000000,
+    "market_time_factor": [
+      1.2,
+      1.8
+    ],
+    "volatility_factor": [
+      0.5,
+      2.0
+    ]
+  },
+  "price_limits": {
+    "daily_limit_percent": 30.0,
+    "price_tick_size": 5
+  },
+  "api_settings": {
+    "update_interval_seconds": 300,
+    "retry_attempts": 3,
+    "timeout_seconds": 10
+  }
+}

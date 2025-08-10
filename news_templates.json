@@ -1,0 +1,39 @@
+{
+  "templates": {
+    "positive": [
+      "{stock}의 {sector} 관련 신기술 개발로 주가 상승 전망",
+      "{stock}, 대규모 계약 체결로 실적 개선 기대감 확산",
+      "{stock} 분기 실적 깜짝 발표, 시장 예상치 상회",
+      "글로벌 {sector} 시장 성장으로 {stock} 수혜 전망",
+      "{stock}의 신사업 진출 발표로 투자자 관심 집중"
+    ],
+    "negative": [
+      "{stock}, 규제 이슈로 단기 조정 불가피한 상황",
+      "{sector} 업계 전반적 둔화로 {stock} 실적 우려",
+      "{stock} 경영진 변화 발표, 불확실성 확대",
+      "글로벌 {sector} 경쟁 심화로 {stock} 마진 압박",
+      "{stock}의 주요 사업부 부진으로 주가 하락 압력"
+    ],
+    "neutral": [
+      "{stock}, 투자자들의 엇갈린 시각으로 보합권 거래",
+      "{sector} 업계 동향 주시하는 {stock}, 신중한 접근 필요",
+      "{stock}의 중장기 전략 발표, 시장 반응은 제한적"
+    ]
+  },
+  "content_templates": {
+    "positive": "{title}. 업계 전문가들은 이번 발표가 {stock}의 중장기 성장에 긍정적 영향을 미칠 것으로 분석하고 있다. 특히 {sector} 시장의 성장성을 고려할 때 투자 매력도가 높아질 것으로 예상된다.",
+    "negative": "{title}. 시장에서는 이러한 이슈가 {stock}의 단기 실적에 부담으로 작용할 가능성을 우려하고 있다. {sector} 업계 전반에 미칠 영향도 주시해야 할 상황이다.",
+    "neutral": "{title}. 시장 참가자들은 추가적인 정보를 기다리며 신중한 접근을 보이고 있다."
+  },
+  "sources": [
+    "KB리서치센터",
+    "KB증권",
+    "KB투자증권",
+    "시장분석팀"
+  ],
+  "importance_factors": {
+    "대형주_multiplier": 1.2,
+    "sector_sensitivity": 1.1,
+    "market_time_factor": 1.3
+  }
+}

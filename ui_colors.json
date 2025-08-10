@@ -1,0 +1,25 @@
+{
+  "brand": {
+    "yellow": "#FFDD00",
+    "yellow_dark": "#FFB800",
+    "yellow_light": "#FFF2A0"
+  },
+  "base": {
+    "black": "#000000",
+    "white": "#FFFFFF",
+    "gray_dark": "#333333",
+    "gray": "#666666",
+    "gray_light": "#E5E5E5",
+    "gray_bg": "#F8F9FA"
+  },
+  "status": {
+    "success": "#28A745",
+    "danger": "#DC3545",
+    "warning": "#FFC107",
+    "info": "#17A2B8"
+  },
+  "investment": {
+    "profit": "#FF6B6B",
+    "loss": "#4ECDC4"
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "beginner_principles": {
+    "basic_rules": [
+      "분산투자로 위험 분산하기",
+      "투자는 여유자금으로만 하기",
+      "감정적 판단 피하기", 
+      "손절 기준 미리 정하기",
+      "충분한 공부 후 투자하기"
+    ],
+    "recommended_allocation": {
+      "안전자산": 60,
+      "성장주": 30, 
+      "고위험자산": 10
+    },
+    "timeline": "6개월 이상 장기 투자 권장",
+    "max_single_stock": 20
+  },
+  "principle_templates": {
+    "high_loss_rate": [
+      "손절 기준을 명확히 하고 반드시 지키기",
+      "투자 전 충분한 분석과 근거 마련하기",
+      "감정적 판단보다는 데이터 기반 의사결정하기"
+    ],
+    "emotional_trader": [
+      "목표 수익률 달성 시 일부 매도 규칙 만들기",
+      "FOMO나 욕심이 들 때는 하루 더 생각하기",
+      "투자 일기를 써서 감정 패턴 파악하기"
+    ],
+    "overtrading": [
+      "과도한 거래 줄이고 장기 투자 고려하기",
+      "월 거래 횟수 제한 두기",
+      "매매 수수료와 세금 고려하여 신중하게 거래하기"
+    ],
+    "concentration_risk": [
+      "포트폴리오 다양화로 위험 분산하기",
+      "단일 종목 비중을 20% 이하로 제한하기",
+      "섹터별 분산투자 고려하기"
+    ]
+  },
+  "risk_management": {
+    "position_sizing": {
+      "conservative": 5,
+      "moderate": 10,
+      "aggressive": 20
+    },
+    "stop_loss_rules": {
+      "growth_stocks": -15,
+      "value_stocks": -20,
+      "speculative": -10
+    },
+    "profit_taking": {
+      "first_target": 20,
+      "second_target": 50,
+      "trailing_stop": 10
+    }
+  }
+}

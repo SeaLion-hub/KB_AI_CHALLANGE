@@ -1,0 +1,72 @@
+{
+  "config_hash": "a9e448d6",
+  "generated_at": "2025-08-10T18:53:38.910230",
+  "users": {
+    "김투자": {
+      "id": "김투자",
+      "name": "김투자",
+      "type": "fomo_trader",
+      "description": "FOMO 매수 경향의 감정적 투자자",
+      "icon": "🔥",
+      "personality": {
+        "impulsiveness": 0.8,
+        "confidence": 0.7,
+        "patience": 0.3,
+        "analysis": 0.4,
+        "risk_tolerance": 0.8
+      },
+      "trades_count": 44,
+      "success_rate": 0.39041240850400366,
+      "avg_return": -2.144825452087065,
+      "risk_tolerance": "high",
+      "custom_traits": {
+        "news_sensitivity": 0.9,
+        "social_influence": 0.8
+      }
+    },
+    "박복기": {
+      "id": "박복기",
+      "name": "박복기",
+      "type": "systematic_trader",
+      "description": "체계적이고 분석적인 투자자",
+      "icon": "📊",
+      "personality": {
+        "impulsiveness": 0.2,
+        "confidence": 0.6,
+        "patience": 0.9,
+        "analysis": 0.9,
+        "risk_tolerance": 0.4
+      },
+      "trades_count": 35,
+      "success_rate": 0.6454800063782263,
+      "avg_return": 4.094938056317829,
+      "risk_tolerance": "low",
+      "custom_traits": {
+        "analysis_depth": 0.9,
+        "patience_level": 0.9
+      }
+    },
+    "이신규": {
+      "id": "이신규",
+      "name": "이신규",
+      "type": "beginner",
+      "description": "투자 초보자",
+      "icon": "🌱",
+      "personality": {
+        "impulsiveness": 0.5,
+        "confidence": 0.3,
+        "patience": 0.6,
+        "analysis": 0.3,
+        "risk_tolerance": 0.2
+      },
+      "trades_count": 0,
+      "success_rate": 0.0,
+      "avg_return": 0.0,
+      "risk_tolerance": "low",
+      "custom_traits": {
+        "learning_speed": 0.7,
+        "caution_level": 0.8
+      }
+    }
+  }
+}

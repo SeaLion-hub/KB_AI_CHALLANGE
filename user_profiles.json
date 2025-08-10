@@ -1,0 +1,142 @@
+{
+  "profiles": {
+    "fomo_trader": {
+      "description": "FOMO 매수 경향의 감정적 투자자",
+      "personality": {
+        "impulsiveness": 0.8,
+        "confidence": 0.7,
+        "patience": 0.3,
+        "analysis": 0.4,
+        "risk_tolerance": 0.8
+      },
+      "trading_patterns": {
+        "success_rate_range": [
+          0.35,
+          0.45
+        ],
+        "avg_return_range": [
+          -2.5,
+          1.5
+        ],
+        "trade_count_range": [
+          40,
+          60
+        ]
+      },
+      "preferred_stocks": [
+        "화제성_높은_종목"
+      ],
+      "common_emotions": [
+        "욕심",
+        "흥분",
+        "확신",
+        "불안"
+      ],
+      "trading_reasons": [
+        "{stock} 급등 소식 듣고 추격 매수",
+        "SNS에서 {stock} 호재 소식 확인",
+        "지인 추천으로 {stock} 진입"
+      ]
+    },
+    "systematic_trader": {
+      "description": "체계적이고 분석적인 투자자",
+      "personality": {
+        "impulsiveness": 0.2,
+        "confidence": 0.6,
+        "patience": 0.9,
+        "analysis": 0.9,
+        "risk_tolerance": 0.4
+      },
+      "trading_patterns": {
+        "success_rate_range": [
+          0.55,
+          0.7
+        ],
+        "avg_return_range": [
+          2.0,
+          8.5
+        ],
+        "trade_count_range": [
+          30,
+          45
+        ]
+      },
+      "preferred_stocks": [
+        "안정적_대형주"
+      ],
+      "common_emotions": [
+        "냉정",
+        "확신",
+        "신중",
+        "차분"
+      ],
+      "trading_reasons": [
+        "{stock} 기술적 분석 결과 매수 신호",
+        "재무제표 분석 후 {stock} 가치 매력 확인",
+        "분산투자 차원에서 {stock} 편입"
+      ]
+    },
+    "beginner": {
+      "description": "투자 초보자",
+      "personality": {
+        "impulsiveness": 0.5,
+        "confidence": 0.3,
+        "patience": 0.6,
+        "analysis": 0.3,
+        "risk_tolerance": 0.2
+      },
+      "trading_patterns": {
+        "success_rate_range": [
+          0.0,
+          0.0
+        ],
+        "avg_return_range": [
+          0.0,
+          0.0
+        ],
+        "trade_count_range": [
+          0,
+          0
+        ]
+      },
+      "preferred_stocks": [
+        "전체"
+      ],
+      "common_emotions": [
+        "신중",
+        "불안",
+        "희망"
+      ],
+      "trading_reasons": [
+        "안전한 대형주 투자",
+        "장기 투자 목적"
+      ]
+    }
+  },
+  "users": {
+    "김투자": {
+      "type": "fomo_trader",
+      "icon": "🔥",
+      "custom_traits": {
+        "news_sensitivity": 0.9,
+        "social_influence": 0.8
+      }
+    },
+    "박복기": {
+      "type": "systematic_trader",
+      "icon": "📊",
+      "custom_traits": {
+        "analysis_depth": 0.9,
+        "patience_level": 0.9
+      }
+    },
+    "이신규": {
+      "type": "beginner",
+      "icon": "🌱",
+      "custom_traits": {
+        "learning_speed": 0.7,
+        "caution_level": 0.8
+      }
+    }
+  }
+}

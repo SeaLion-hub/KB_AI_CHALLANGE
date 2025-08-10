@@ -1,0 +1,83 @@
+{
+  "categories": {
+    "화제성_높은_종목": [
+      "카카오",
+      "NAVER",
+      "SK하이닉스"
+    ],
+    "안정적_대형주": [
+      "삼성전자",
+      "LG화학",
+      "현대차"
+    ],
+    "전체": "모든_종목"
+  },
+  "stocks": {
+    "삼성전자": {
+      "sector": "반도체",
+      "market_cap": "대형주",
+      "base_price_range": [
+        60000,
+        70000
+      ],
+      "volatility": 0.15,
+      "news_sensitivity": 0.8,
+      "api_symbol": "005930"
+    },
+    "SK하이닉스": {
+      "sector": "반도체",
+      "market_cap": "대형주",
+      "base_price_range": [
+        110000,
+        130000
+      ],
+      "volatility": 0.2,
+      "news_sensitivity": 0.9,
+      "api_symbol": "000660"
+    },
+    "NAVER": {
+      "sector": "인터넷",
+      "market_cap": "대형주",
+      "base_price_range": [
+        170000,
+        190000
+      ],
+      "volatility": 0.18,
+      "news_sensitivity": 0.7,
+      "api_symbol": "035420"
+    },
+    "카카오": {
+      "sector": "인터넷",
+      "market_cap": "대형주",
+      "base_price_range": [
+        40000,
+        50000
+      ],
+      "volatility": 0.25,
+      "news_sensitivity": 0.8,
+      "api_symbol": "035720"
+    },
+    "LG화학": {
+      "sector": "화학",
+      "market_cap": "대형주",
+      "base_price_range": [
+        370000,
+        390000
+      ],
+      "volatility": 0.22,
+      "news_sensitivity": 0.6,
+      "api_symbol": "051910"
+    },
+    "현대차": {
+      "sector": "자동차",
+      "market_cap": "대형주",
+      "base_price_range": [
+        170000,
+        190000
+      ],
+      "volatility": 0.16,
+      "news_sensitivity": 0.7,
+      "api_symbol": "005380"
+    }
+  }
+}
