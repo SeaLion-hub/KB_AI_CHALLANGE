@@ -2,10 +2,10 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 
-# Generate Park Tuja (FOMO Buyer) dataset
-np.random.seed(24)
+# 박투자 (FOMO Buyer) 데이터셋 생성
+np.random.seed(24) # 김국민과 다른 시드 사용
 
-# Korean stocks
+# 한국 주요 주식
 korean_stocks = [
     {'종목명': '삼성전자', '종목코드': '005930'},
     {'종목명': '카카오', '종목코드': '035720'},
@@ -17,18 +17,18 @@ korean_stocks = [
     {'종목명': '셀트리온', '종목코드': '068270'}
 ]
 
-# Park Tuja's emotional pattern (prone to FOMO buying)
+# 박투자 감정 패턴 (FOMO 매수에 취약)
 emotions_config = {
     '#공포': {'base_return': -15, 'volatility': 12, 'freq': 0.1},
     '#패닉': {'base_return': -18, 'volatility': 15, 'freq': 0.08},
     '#불안': {'base_return': -8, 'volatility': 10, 'freq': 0.12},
-    '#추격매수': {'base_return': -12, 'volatility': 20, 'freq': 0.35},  # Much higher frequency
-    '#욕심': {'base_return': -10, 'volatility': 25, 'freq': 0.2},      # Higher frequency
+    '#추격매수': {'base_return': -12, 'volatility': 20, 'freq': 0.35},
+    '#욕심': {'base_return': -10, 'volatility': 25, 'freq': 0.2},
     '#확신': {'base_return': 5, 'volatility': 8, 'freq': 0.1},
     '#합리적': {'base_return': 7, 'volatility': 6, 'freq': 0.05}
 }
 
-# Memo templates for Park Tuja (focused on FOMO)
+# 박투자 메모 템플릿 (FOMO 중심)
 memo_templates = {
     '#공포': [
         "코스피 폭락하니까 {종목명} 급히 손절했음",
@@ -56,10 +56,10 @@ memo_templates = {
     '#욕심': [
         "{종목명} 이미 올랐지만 더 오를 것 같아서 추가 매수",
         "쉬운 돈이다 싶어서 {종목명} 물량 늘림",
-        "{종목명} 대박날 것 같아서 풀매수",
         "이번엔 확실하다 싶어서 {종목명} 올인",
-        "{종목명} 100% 오를 것 같아서 대량 매수",
-        "주변에서 {종목명} 추천해서 욕심내서 매수"
+        "{종목명} 대박날 것 같아서 풀매수",
+        "주변에서 {종목명} 추천해서 욕심내서 매수",
+        "{종목명} 100% 오를 것 같아서 대량 매수"
     ],
     '#확신': [
         "{종목명} 기술적 분석상 매수 타이밍으로 판단",
@@ -85,7 +85,7 @@ technical_analysis_templates = [
     "스토캐스틱 과매수에서 베어리시 다이버전스"
 ]
 
-# 뉴스 분석 템플릿  
+# 뉴스 분석 템플릿
 news_analysis_templates = [
     "어닝 서프라이즈 발표로 시장 기대감 급상승",
     "정부 지원 정책 발표로 관련주 테마 부각",
@@ -113,7 +113,7 @@ emotion_analysis_templates = [
     "감정적 흥분 상태에서 비합리적 판단"
 ]
 
-# Generate data
+# 데이터 생성
 trades = []
 start_date = datetime(2024, 1, 1)
 
@@ -121,16 +121,16 @@ for i in range(120):
     trade_date = start_date + timedelta(days=np.random.randint(0, 300))
     stock = np.random.choice(korean_stocks)
     
-    # Select emotion based on frequency (Park Tuja has more FOMO)
+    # 감정 선택 (빈도 기반)
     emotions = list(emotions_config.keys())
     frequencies = [config['freq'] for config in emotions_config.values()]
     emotion = np.random.choice(emotions, p=frequencies)
     
-    # Generate return
+    # 수익률 생성
     config = emotions_config[emotion]
     return_pct = np.random.normal(config['base_return'], config['volatility'])
     
-    # Generate memo
+    # 메모 생성
     memo_template = np.random.choice(memo_templates[emotion])
     memo = memo_template.format(종목명=stock['종목명'])
     
@@ -154,7 +154,7 @@ for i in range(120):
 df = pd.DataFrame(trades)
 df = df.sort_values('거래일시').reset_index(drop=True)
 
-# Save to CSV
+# CSV 파일로 저장
 df.to_csv('park_tuja_trades.csv', index=False, encoding='utf-8-sig')
 print("박투자 데이터 생성 완료!")
 print(f"총 거래 수: {len(df)}")
