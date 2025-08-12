@@ -66,13 +66,46 @@ memo_templates = {
     ]
 }
 
-# Market news templates for key trades
-market_news_templates = [
-    "[경제] 미 연준 금리 인상 우려로 증시 급락|[국제] 글로벌 인플레이션 심화 우려|[시장] 외국인 대량 매도세 지속",
-    "[정치] 정부 부동산 정책 발표로 시장 불안|[경제] 원/달러 환율 급등으로 수입 부담 증가|[기업] 대형 IPO 물량 출회로 유동성 부족",
-    "[국제] 중국 경제성장률 둔화 우려|[시장] 개인투자자 패닉셀링 확산|[경제] 물가상승률 목표치 초과로 긴축 정책 우려",
-    "[기업] 주요 기업 실적 부진 발표|[시장] 코스피 2400선 붕괴 우려|[경제] 수출 둔화로 경기침체 우려",
-    "[국제] 미중 무역갈등 재점화|[정치] 정치적 불확실성 증가|[시장] 기관투자자 매도 우세"
+# 기술적 분석 템플릿
+technical_analysis_templates = [
+    "RSI 과매도 구간 진입, 반등 신호 감지됨",
+    "이동평균선 하향 돌파로 추가 하락 우려",
+    "볼린저밴드 상단 터치 후 조정 예상",
+    "MACD 골든크로스 형성으로 상승 전환 기대",
+    "지지선 이탈로 하락 가속화 가능성",
+    "거래량 급증과 함께 돌파 신호 확인",
+    "삼각수렴 패턴 완성 후 방향성 주목 필요",
+    "피보나치 되돌림 61.8% 지지선 테스트 중",
+    "일목균형표 구름대 아래 위치로 약세 지속",
+    "스토캐스틱 과매수 구간에서 다이버전스 발생"
+]
+
+# 뉴스 분석 템플릿
+news_analysis_templates = [
+    "분기 실적 발표 앞두고 시장 기대감 상승",
+    "정부 규제 완화 소식으로 업종 전반 호재 분위기",
+    "글로벌 공급망 이슈로 원자재 가격 상승 압박",
+    "경쟁사 호실적 발표로 동반 상승 기대감 확산",
+    "신제품 출시 연기 소식으로 시장 실망감 증가",
+    "대주주 지분 매각 계획 발표로 투자자 우려 증대",
+    "해외 진출 확대 계획으로 중장기 성장성 부각",
+    "업계 전반 수요 둔화 우려로 주가 하방 압력",
+    "ESG 경영 강화 발표로 기관 투자자 관심 증가",
+    "배당금 증액 발표로 배당 투자자들의 관심 집중"
+]
+
+# 감정 분석 템플릿
+emotion_analysis_templates = [
+    "시장 하락에 대한 과도한 공포감이 투자 판단을 흐림",
+    "급등에 따른 FOMO 심리로 충동적 매수 결정",
+    "손실 회복 욕구로 무리한 레버리지 활용",
+    "과도한 자신감으로 리스크 관리 원칙 무시",
+    "불확실성 증가로 불안감이 지배적 감정 상태",
+    "타인 추천에만 의존하여 주체적 판단 부족",
+    "단기 수익 욕심으로 조급한 매매 패턴 반복",
+    "냉정한 분석 기반의 합리적 투자 판단 수행",
+    "시장 변동성에 과도하게 민감한 반응 보임",
+    "군중심리에 휩쓸려 독립적 사고 능력 저하"
 ]
 
 # Generate data
@@ -96,11 +129,6 @@ for i in range(120):
     memo_template = np.random.choice(memo_templates[emotion])
     memo = memo_template.format(종목명=stock['종목명'])
     
-    # Add market news for key panic selling trades
-    market_news = ""
-    if emotion in ['#공포', '#패닉'] and return_pct < -15:
-        market_news = np.random.choice(market_news_templates)
-    
     trade = {
         '거래일시': trade_date,
         '종목명': stock['종목명'],
@@ -112,7 +140,9 @@ for i in range(120):
         '메모': memo,
         '수익률': round(return_pct, 2),
         '코스피지수': round(2400 + np.random.normal(0, 100), 2),
-        '시장뉴스': market_news
+        '기술분석': np.random.choice(technical_analysis_templates),
+        '뉴스분석': np.random.choice(news_analysis_templates),
+        '감정분석': np.random.choice(emotion_analysis_templates)
     }
     trades.append(trade)
 
